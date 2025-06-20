@@ -1,0 +1,24 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Café El Mejor - Tienda</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body onload="checkSession(); loadProducts(); viewCart();">
+  <header>
+    <img src="assets/logo.png" alt="Logo" class="logo-header">
+    <button onclick="logout()" class="logout-btn">Cerrar sesión</button>
+  </header>
+  <main>
+    <h1>Productos</h1>
+    <div id="products" class="products-grid"></div>
+    <h2>Carrito</h2>
+    <div id="cart" class="cart-container"></div>
+<button onclick="confirmPurchase()">Confirmar Compra</button>
+  </main>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
