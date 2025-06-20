@@ -5,7 +5,7 @@ INSTRUCCIONES:
 2. Ejecutá:
    npm install
    PORT=3000 DB_PATH=./db.sqlite node server.js
-3. Abrí 'frontend/login.html' con Live Server.
+3. Abrí http://localhost:3000/ en el navegador.
 4. Usá login o registro. Solo los usuarios logueados pueden agregar al carrito.
 
 La base de datos se encuentra en: backend/db.sqlite
