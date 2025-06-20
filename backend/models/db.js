@@ -25,6 +25,16 @@ db.serialize(() => {
     FOREIGN KEY(userId) REFERENCES users(id),
     FOREIGN KEY(productId) REFERENCES products(id)
   )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER,
+    productId INTEGER,
+    quantity INTEGER,
+    orderDate TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY(userId) REFERENCES users(id),
+    FOREIGN KEY(productId) REFERENCES products(id)
+  )`);
 });
 
 module.exports = db;
