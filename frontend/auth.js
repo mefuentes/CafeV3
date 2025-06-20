@@ -12,7 +12,7 @@ function logout() {
 async function register() {
   const username = document.getElementById('regUser').value;
   const password = document.getElementById('regPass').value;
-  const res = await fetch("http://localhost:3000/api/register", {
+  const res = await fetch("/api/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
@@ -25,7 +25,7 @@ async function register() {
 async function login() {
   const username = document.getElementById('logUser').value;
   const password = document.getElementById('logPass').value;
-  const res = await fetch("http://localhost:3000/api/login", {
+  const res = await fetch("/api/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),

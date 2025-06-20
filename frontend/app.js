@@ -1,6 +1,6 @@
 
 async function loadProducts() {
-  const res = await fetch("http://localhost:3000/api/products");
+  const res = await fetch("/api/products");
   const products = await res.json();
 
   const container = document.getElementById("products");
@@ -26,7 +26,7 @@ async function addToCart(productId) {
     return;
   }
 
-  await fetch("http://localhost:3000/api/cart", {
+  await fetch("/api/cart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId: user.id, productId, quantity: 1 }),
@@ -40,7 +40,7 @@ async function viewCart() {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user) return;
 
-  const res = await fetch(`http://localhost:3000/api/cart?userId=${user.id}`);
+  const res = await fetch(`/api/cart?userId=${user.id}`);
   const items = await res.json();
 
   const cartContainer = document.getElementById("cart");
@@ -56,7 +56,7 @@ async function viewCart() {
 }
 
 async function removeFromCart(itemId) {
-  await fetch(`http://localhost:3000/api/cart/${itemId}`, {
+  await fetch(`/api/cart/${itemId}`, {
     method: "DELETE",
   });
   viewCart();
@@ -66,7 +66,7 @@ async function confirmPurchase() {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user) return;
 
-  const res = await fetch("http://localhost:3000/api/confirm", {
+  const res = await fetch("/api/confirm", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId: user.id }),
