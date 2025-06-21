@@ -10,10 +10,12 @@ const cartRoutes = require('./routes/cart');
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Sirve la página de inicio antes de la carpeta estática para evitar que index.html
+// intercepte la ruta raíz
 app.get('/', (req, res) =>
   res.sendFile(path.join(__dirname, '../frontend/landing.html'))
 );
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.use('/api', authRoutes);
 app.use('/api', productRoutes);
