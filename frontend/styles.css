@@ -77,6 +77,11 @@ header {
   padding: 10px;
   border-bottom: 1px solid #ccc;
 }
+.cart-total {
+  padding: 10px 20px;
+  text-align: right;
+  font-weight: bold;
+}
 .logout-btn {
   background: transparent;
   border: none;

@@ -44,15 +44,20 @@ async function viewCart() {
   const items = await res.json();
 
   const cartContainer = document.getElementById("cart");
+  const totalContainer = document.getElementById("cart-total");
   cartContainer.innerHTML = "";
+  let total = 0;
   items.forEach((item) => {
+    const subtotal = item.price * item.quantity;
+    total += subtotal;
     cartContainer.innerHTML += `
       <div class="cart-item">
-        ${item.name} x${item.quantity} - $${item.price * item.quantity}
+        ${item.name} x${item.quantity} - $${subtotal}
         <button onclick="removeFromCart(${item.id})">Eliminar</button>
       </div>
     `;
   });
+  totalContainer.textContent = `Total: $${total.toFixed(2)}`;
 }
 
 async function removeFromCart(itemId) {
