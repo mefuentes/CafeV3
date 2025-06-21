@@ -37,6 +37,28 @@ db.serialize(() => {
     price REAL
   )`);
 
+  // Insert default products if they don't exist
+  const defaultProducts = [
+    { name: 'Café Molido', description: '250g café molido premium', price: 3500 },
+    { name: 'Café en Grano', description: 'Café en grano de altura', price: 4000 },
+    { name: 'Café Orgánico', description: 'Café sin pesticidas certificado', price: 4500 },
+    { name: 'Taza de Cerámica', description: 'Taza térmica de alta calidad', price: 2500 },
+    { name: 'Filtro de Papel', description: 'Paquete de 100 filtros para café', price: 500 }
+  ];
+
+  db.all('SELECT name FROM products', (err, rows) => {
+    if (err) return;
+    const names = rows.map(r => r.name);
+    defaultProducts.forEach(p => {
+      if (!names.includes(p.name)) {
+        db.run(
+          'INSERT INTO products (name, description, price) VALUES (?, ?, ?)',
+          [p.name, p.description, p.price]
+        );
+      }
+    });
+  });
+
   db.run(`CREATE TABLE IF NOT EXISTS cart (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userId INTEGER,
