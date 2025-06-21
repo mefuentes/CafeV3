@@ -23,7 +23,10 @@ db.serialize(() => {
       db.run('ALTER TABLE users ADD COLUMN last_name TEXT');
     }
     if (!names.includes('email')) {
-      db.run('ALTER TABLE users ADD COLUMN email TEXT UNIQUE');
+      db.run('ALTER TABLE users ADD COLUMN email TEXT');
+      db.run(
+        'CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(email)'
+      );
     }
   });
 
