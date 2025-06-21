@@ -5,6 +5,7 @@ body {
   padding: 0;
   background: #f9f6f1;
   color: #4a3f35;
+  line-height: 1.6;
 }
 .auth-body {
   display: flex;
@@ -48,9 +49,13 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
+  background: #8b5e3c;
+  color: #fff;
   padding: 10px 20px;
-  border-bottom: 1px solid #ccc;
+}
+header a,
+header button {
+  color: #fff;
 }
 .products-grid {
   display: grid;
@@ -84,8 +89,26 @@ header {
 }
 .logout-btn {
   background: transparent;
-  border: none;
+  border: 1px solid #fff;
   font-weight: bold;
   cursor: pointer;
-  color: #8b5e3c;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 5px;
+}
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+}
+.intro {
+  text-align: center;
+  margin: 40px auto;
+}
+.footer {
+  background: #8b5e3c;
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  margin-top: 40px;
 }
