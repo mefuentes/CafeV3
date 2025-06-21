@@ -6,9 +6,26 @@ const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
+    first_name TEXT,
+    last_name TEXT,
+    email TEXT UNIQUE,
     password TEXT
   )`);
+
+  // Ensure new columns exist for older databases
+  db.all('PRAGMA table_info(users)', (err, columns) => {
+    if (err) return;
+    const names = columns.map(c => c.name);
+    if (!names.includes('first_name')) {
+      db.run('ALTER TABLE users ADD COLUMN first_name TEXT');
+    }
+    if (!names.includes('last_name')) {
+      db.run('ALTER TABLE users ADD COLUMN last_name TEXT');
+    }
+    if (!names.includes('email')) {
+      db.run('ALTER TABLE users ADD COLUMN email TEXT UNIQUE');
+    }
+  });
 
   db.run(`CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
