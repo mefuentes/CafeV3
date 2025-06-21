@@ -11,31 +11,31 @@ function logout() {
 }
 
 async function register() {
-  const firstName = document.getElementById('regFirstName').value;
-  const lastName = document.getElementById('regLastName').value;
-  const email = document.getElementById('regEmail').value;
-  const password = document.getElementById('regPass').value;
-  if (!email.includes('@')) {
+  const nombre = document.getElementById('regFirstName').value;
+  const apellido = document.getElementById('regLastName').value;
+  const correo = document.getElementById('regEmail').value;
+  const contrasena = document.getElementById('regPass').value;
+  if (!correo.includes('@')) {
     alert('Correo electrónico inválido');
     return;
   }
   const res = await fetch("/api/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ firstName, lastName, email, password }),
+    body: JSON.stringify({ nombre, apellido, correo, contrasena }),
   });
   const data = await res.json();
-  alert(data.email ? "Registro exitoso" : data.error);
-  if (data.email) window.location.href = "login.html";
+  alert(data.correo ? "Registro exitoso" : data.error);
+  if (data.correo) window.location.href = "login.html";
 }
 
 async function login() {
-  const email = document.getElementById('logEmail').value;
-  const password = document.getElementById('logPass').value;
+  const correo = document.getElementById('logEmail').value;
+  const contrasena = document.getElementById('logPass').value;
   const res = await fetch("/api/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ correo, contrasena }),
   });
   const data = await res.json();
   if (res.ok) {

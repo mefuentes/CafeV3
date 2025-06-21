@@ -6,27 +6,30 @@ const db = new sqlite3.Database(dbPath);
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    first_name TEXT,
-    last_name TEXT,
-    email TEXT UNIQUE,
-    password TEXT
+    nombre TEXT,
+    apellido TEXT,
+    correo TEXT UNIQUE,
+    contrasena TEXT
   )`);
 
   // Ensure new columns exist for older databases
   db.all('PRAGMA table_info(users)', (err, columns) => {
     if (err) return;
     const names = columns.map(c => c.name);
-    if (!names.includes('first_name')) {
-      db.run('ALTER TABLE users ADD COLUMN first_name TEXT');
+    if (!names.includes('nombre')) {
+      db.run('ALTER TABLE users ADD COLUMN nombre TEXT');
     }
-    if (!names.includes('last_name')) {
-      db.run('ALTER TABLE users ADD COLUMN last_name TEXT');
+    if (!names.includes('apellido')) {
+      db.run('ALTER TABLE users ADD COLUMN apellido TEXT');
     }
-    if (!names.includes('email')) {
-      db.run('ALTER TABLE users ADD COLUMN email TEXT');
+    if (!names.includes('correo')) {
+      db.run('ALTER TABLE users ADD COLUMN correo TEXT');
       db.run(
-        'CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(email)'
+        'CREATE UNIQUE INDEX IF NOT EXISTS users_correo_unique ON users(correo)'
       );
+    }
+    if (!names.includes('contrasena')) {
+      db.run('ALTER TABLE users ADD COLUMN contrasena TEXT');
     }
   });
 

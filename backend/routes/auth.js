@@ -5,18 +5,18 @@ const db = require('../models/db');
 const router = express.Router();
 
 router.post('/register', async (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
-  if (!email || !email.includes('@')) {
+  const { nombre, apellido, correo, contrasena } = req.body;
+  if (!correo || !correo.includes('@')) {
     return res.status(400).json({ error: 'Correo electrónico inválido' });
   }
   try {
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(contrasena, 10);
     db.run(
-      'INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)',
-      [firstName, lastName, email, hash],
+      'INSERT INTO users (nombre, apellido, correo, contrasena) VALUES (?, ?, ?, ?)',
+      [nombre, apellido, correo, hash],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, email });
+        res.json({ id: this.lastID, correo });
       }
     );
   } catch (err) {
@@ -25,13 +25,13 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', (req, res) => {
-  const { email, password } = req.body;
-  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, row) => {
+  const { correo, contrasena } = req.body;
+  db.get('SELECT * FROM users WHERE correo = ?', [correo], async (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(401).json({ error: 'Credenciales inválidas' });
-    const match = await bcrypt.compare(password, row.password);
+    const match = await bcrypt.compare(contrasena, row.contrasena);
     if (!match) return res.status(401).json({ error: 'Credenciales inválidas' });
-    res.json({ id: row.id, email: row.email, firstName: row.first_name, lastName: row.last_name });
+    res.json({ id: row.id, correo: row.correo, nombre: row.nombre, apellido: row.apellido });
   });
 });
 
