@@ -5,10 +5,38 @@ const router = express.Router();
 
 router.post('/cart', (req, res) => {
   const { userId, productId, quantity } = req.body;
-  db.run('INSERT INTO cart (userId, productId, quantity) VALUES (?, ?, ?)', [userId, productId, quantity], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ id: this.lastID });
-  });
+
+  // Check if the product already exists in the user's cart
+  db.get(
+    'SELECT id, quantity FROM cart WHERE userId = ? AND productId = ?',
+    [userId, productId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (row) {
+        // If it exists, update the quantity
+        const newQty = row.quantity + quantity;
+        db.run(
+          'UPDATE cart SET quantity = ? WHERE id = ?',
+          [newQty, row.id],
+          function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: row.id, quantity: newQty, updated: true });
+          }
+        );
+      } else {
+        // Otherwise insert a new record
+        db.run(
+          'INSERT INTO cart (userId, productId, quantity) VALUES (?, ?, ?)',
+          [userId, productId, quantity],
+          function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID, quantity, inserted: true });
+          }
+        );
+      }
+    }
+  );
 });
 
 router.get('/cart', (req, res) => {
