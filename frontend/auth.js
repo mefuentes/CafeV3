@@ -6,7 +6,8 @@ function checkSession() {
 
 function logout() {
   localStorage.removeItem("user");
-  window.location.href = "login.html";
+  // Al cerrar sesión volvemos a la página principal
+  window.location.href = "landing.html";
 }
 
 async function register() {
