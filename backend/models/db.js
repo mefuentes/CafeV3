@@ -28,6 +28,7 @@ db.serialize(() => {
 
   db.run(`CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    orderId INTEGER,
     userId INTEGER,
     productId INTEGER,
     productName TEXT,
@@ -37,6 +38,15 @@ db.serialize(() => {
     FOREIGN KEY(userId) REFERENCES users(id),
     FOREIGN KEY(productId) REFERENCES products(id)
   )`);
+
+  // Ensure the orderId column exists for databases created with older versions
+  db.all('PRAGMA table_info(orders)', (err, columns) => {
+    if (err) return;
+    const hasOrderId = columns.some(c => c.name === 'orderId');
+    if (!hasOrderId) {
+      db.run('ALTER TABLE orders ADD COLUMN orderId INTEGER');
+    }
+  });
 });
 
 module.exports = db;
