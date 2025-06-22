@@ -31,11 +31,11 @@ function createPdf(lines) {
   const offsets = [0];
   let body = '';
   objs.forEach((o, i) => {
-    offsets.push(pdf.length + body.length);
+    offsets.push(Buffer.byteLength(pdf + body));
     body += `${i + 1} 0 obj\n${o}\nendobj\n`;
   });
   pdf += body;
-  const xrefOffset = pdf.length;
+  const xrefOffset = Buffer.byteLength(pdf);
   let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
   offsets.slice(1).forEach((off) => {
     xref += off.toString().padStart(10, '0') + ' 00000 n \n';
