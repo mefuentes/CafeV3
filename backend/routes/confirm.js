@@ -8,8 +8,14 @@ function createPdf(lines) {
   const objs = [];
   const fontIndex =
     objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>') - 1;
+  // Posicionamos cada línea de forma absoluta usando Tm para evitar
+  // acumulación de desplazamientos con Td, que provocaba que el texto
+  // quedara fuera de la página.
   const contentLines = lines
-    .map((l, i) => `0 ${750 - i * 20} Td (${l.replace(/[()]/g, '')}) Tj`)
+    .map(
+      (l, i) =>
+        `1 0 0 1 50 ${750 - i * 20} Tm (${l.replace(/[()]/g, '')}) Tj`
+    )
     .join('\n');
   const streamContent = `BT\n/F1 12 Tf\n${contentLines}\nET`;
   const contentsIndex =
