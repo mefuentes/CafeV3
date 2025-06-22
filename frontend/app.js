@@ -67,7 +67,11 @@ async function removeFromCart(itemId) {
   viewCart();
 }
 
-async function confirmPurchase() {
+function goToPayment() {
+  window.location.href = "payment.html";
+}
+
+async function confirmPurchase(method) {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user) return;
 
@@ -78,6 +82,6 @@ async function confirmPurchase() {
   });
 
   const data = await res.json();
-  alert(data.message || "Compra confirmada.");
-  viewCart();
+  alert(`${data.message || "Compra confirmada."}\nMétodo: ${method}`);
+  window.location.href = "index.html";
 }

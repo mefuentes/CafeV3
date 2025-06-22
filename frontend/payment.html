@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Método de Pago - Café El Mejor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-body" onload="checkSession()">
+  <div class="auth-container">
+    <h2>Elige una forma de pago</h2>
+    <button onclick="confirmPurchase('Tarjeta de Débito')">Tarjeta de Débito</button>
+    <button onclick="confirmPurchase('Tarjeta de Crédito')">Tarjeta de Crédito</button>
+    <button onclick="confirmPurchase('Código QR')">Código QR</button>
+  </div>
+  <script src="auth.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
