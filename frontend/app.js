@@ -83,5 +83,19 @@ async function confirmPurchase(method) {
 
   const data = await res.json();
   alert(`${data.message || "Compra confirmada."}\nMétodo: ${method}`);
+  if (data.orderId) {
+    const pdfRes = await fetch(`/api/invoice/${data.orderId}`);
+    if (pdfRes.ok) {
+      const blob = await pdfRes.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `factura_${data.orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }
   window.location.href = "index.html";
 }
