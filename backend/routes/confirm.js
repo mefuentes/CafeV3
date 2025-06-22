@@ -17,7 +17,8 @@ function createPdf(lines) {
         `1 0 0 1 50 ${750 - i * 20} Tm (${l.replace(/[()]/g, '')}) Tj`
     )
     .join('\n');
-  const streamContent = `BT\n/F1 12 Tf\n${contentLines}\nET`;
+  // Utilizamos una fuente ligeramente más grande para mejorar la legibilidad
+  const streamContent = `BT\n/F1 14 Tf\n${contentLines}\nET`;
   const contentsIndex =
     objs.push(
       `<< /Length ${Buffer.byteLength(streamContent)} >>\nstream\n${streamContent}\nendstream`
@@ -114,17 +115,22 @@ router.get('/invoice/:orderId', (req, res) => {
         let total = 0;
         const lines = [
           'Caf\u00E9 El Mejor',
-          `FACTURA N\u00B0 ${invoice.id}`,
+          '-----------------------------',
+          'FACTURA DE COMPRA',
+          `N\u00BA ${invoice.id}`,
           `Cliente: ${user.nombre} ${user.apellido}`,
-          `Fecha: ${date}`,
-          `Hora: ${time}`,
-          'Productos:'
+          `Fecha y hora: ${date} ${time}`,
+          '-----------------------------',
+          'Producto | Cant. | Precio | Subtotal'
         ];
         rows.forEach(r => {
-          total += r.productPrice * r.quantity;
-          lines.push(`${r.productName} x${r.quantity} - $${r.productPrice}`);
+          const subtotal = r.productPrice * r.quantity;
+          total += subtotal;
+          lines.push(`${r.productName} x${r.quantity} - $${r.productPrice} = $${subtotal}`);
         });
+        lines.push('-----------------------------');
         lines.push(`Total a pagar: $${total}`);
+        lines.push('Gracias por su compra');
         const pdf = createPdf(lines);
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="factura_${invoice.id}.pdf"`);
