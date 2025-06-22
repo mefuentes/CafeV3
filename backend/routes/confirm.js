@@ -82,9 +82,13 @@ router.post('/confirm', (req, res) => {
       stmt.finalize(err => {
         if (err) return res.status(500).json({ error: err.message });
 
-        db.run('DELETE FROM cart WHERE userId = ?', [userId], function(err) {
-          if (err) return res.status(500).json({ error: err.message });
-          res.json({ message: "Compra confirmada y registrada.", orderId });
+        db.run('INSERT INTO invoices (orderId, userId) VALUES (?, ?)', [orderId, userId], function(err3) {
+          if (err3) return res.status(500).json({ error: err3.message });
+          const invoiceId = this.lastID;
+          db.run('DELETE FROM cart WHERE userId = ?', [userId], function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: "Compra confirmada y registrada.", orderId, invoiceId });
+          });
         });
       });
     });
@@ -100,27 +104,32 @@ router.get('/invoice/:orderId', (req, res) => {
     const userId = rows[0].userId;
     db.get('SELECT nombre, apellido FROM users WHERE id = ?', [userId], (err2, user) => {
       if (err2) return res.status(500).json({ error: err2.message });
+      db.get('SELECT id FROM invoices WHERE orderId = ?', [orderId], (err3, invoice) => {
+        if (err3) return res.status(500).json({ error: err3.message });
+        if (!invoice) return res.status(404).json({ error: 'Factura no encontrada' });
 
-      const now = new Date();
-      const date = now.toLocaleDateString('es-ES');
-      const time = now.toLocaleTimeString('es-ES');
-      let total = 0;
-      const lines = [
-        'Caf\u00E9 El Mejor',
-        `Cliente: ${user.nombre} ${user.apellido}`,
-        `Fecha: ${date}`,
-        `Hora: ${time}`,
-        'Productos:'
-      ];
-      rows.forEach(r => {
-        total += r.productPrice * r.quantity;
-        lines.push(`${r.productName} x${r.quantity} - $${r.productPrice}`);
+        const now = new Date();
+        const date = now.toLocaleDateString('es-ES');
+        const time = now.toLocaleTimeString('es-ES');
+        let total = 0;
+        const lines = [
+          'Caf\u00E9 El Mejor',
+          `FACTURA N\u00B0 ${invoice.id}`,
+          `Cliente: ${user.nombre} ${user.apellido}`,
+          `Fecha: ${date}`,
+          `Hora: ${time}`,
+          'Productos:'
+        ];
+        rows.forEach(r => {
+          total += r.productPrice * r.quantity;
+          lines.push(`${r.productName} x${r.quantity} - $${r.productPrice}`);
+        });
+        lines.push(`Total a pagar: $${total}`);
+        const pdf = createPdf(lines);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="factura_${invoice.id}.pdf"`);
+        res.end(pdf);
       });
-      lines.push(`Total a pagar: $${total}`);
-      const pdf = createPdf(lines);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="factura_${orderId}.pdf"`);
-      res.end(pdf);
     });
   });
 });

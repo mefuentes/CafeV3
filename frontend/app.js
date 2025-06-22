@@ -90,7 +90,8 @@ async function confirmPurchase(method) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `factura_${data.orderId}.pdf`;
+      const num = data.invoiceId || data.orderId;
+      a.download = `factura_${num}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

@@ -85,6 +85,15 @@ db.serialize(() => {
     FOREIGN KEY(productId) REFERENCES products(id)
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS invoices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    orderId INTEGER,
+    userId INTEGER,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(orderId) REFERENCES orders(orderId),
+    FOREIGN KEY(userId) REFERENCES users(id)
+  )`);
+
   // Ensure new columns exist for databases created with older versions
   db.all('PRAGMA table_info(orders)', (err, columns) => {
     if (err) return;
