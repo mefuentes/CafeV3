@@ -78,7 +78,7 @@ async function confirmPurchase(method) {
   const res = await fetch("/api/confirm", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: user.id }),
+    body: JSON.stringify({ userId: user.id, method }),
   });
 
   const data = await res.json();

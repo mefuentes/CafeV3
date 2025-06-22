@@ -79,17 +79,21 @@ db.serialize(() => {
     productName TEXT,
     productPrice REAL,
     quantity INTEGER,
+    paymentMethod TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(userId) REFERENCES users(id),
     FOREIGN KEY(productId) REFERENCES products(id)
   )`);
 
-  // Ensure the orderId column exists for databases created with older versions
+  // Ensure new columns exist for databases created with older versions
   db.all('PRAGMA table_info(orders)', (err, columns) => {
     if (err) return;
-    const hasOrderId = columns.some(c => c.name === 'orderId');
-    if (!hasOrderId) {
+    const names = columns.map(c => c.name);
+    if (!names.includes('orderId')) {
       db.run('ALTER TABLE orders ADD COLUMN orderId INTEGER');
+    }
+    if (!names.includes('paymentMethod')) {
+      db.run('ALTER TABLE orders ADD COLUMN paymentMethod TEXT');
     }
   });
 });

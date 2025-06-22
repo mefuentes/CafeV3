@@ -4,7 +4,7 @@ const db = require('../models/db');
 const router = express.Router();
 
 router.post('/confirm', (req, res) => {
-  const { userId } = req.body;
+  const { userId, method } = req.body;
 
   const q = `
     SELECT c.productId, c.quantity, p.name, p.price
@@ -26,10 +26,10 @@ router.post('/confirm', (req, res) => {
       const orderId = (row ? row.maxId : 0) + 1;
 
       const stmt = db.prepare(
-        'INSERT INTO orders (orderId, userId, productId, productName, productPrice, quantity) VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT INTO orders (orderId, userId, productId, productName, productPrice, quantity, paymentMethod) VALUES (?, ?, ?, ?, ?, ?, ?)'
       );
       items.forEach(i => {
-        stmt.run(orderId, userId, i.productId, i.name, i.price, i.quantity);
+        stmt.run(orderId, userId, i.productId, i.name, i.price, i.quantity, method);
       });
       stmt.finalize(err => {
         if (err) return res.status(500).json({ error: err.message });
