@@ -11,10 +11,16 @@ function logout() {
 }
 
 async function register() {
-  const nombre = document.getElementById('regFirstName').value;
-  const apellido = document.getElementById('regLastName').value;
-  const correo = document.getElementById('regEmail').value;
-  const contrasena = document.getElementById('regPass').value;
+  const nombre = document.getElementById('regFirstName').value.trim();
+  const apellido = document.getElementById('regLastName').value.trim();
+  const correo = document.getElementById('regEmail').value.trim();
+  const contrasena = document.getElementById('regPass').value.trim();
+
+  if (!nombre || !apellido || !correo || !contrasena) {
+    alert('Todos los campos son obligatorios');
+    return;
+  }
+
   if (!correo.includes('@')) {
     alert('Correo electrónico inválido');
     return;

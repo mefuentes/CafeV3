@@ -11,7 +11,13 @@ const router = express.Router();
 
 router.post('/register', async (req, res) => {
   const { nombre, apellido, correo, contrasena } = req.body;
-  if (!correo || !correo.includes('@')) {
+
+  // Validate required fields
+  if (!nombre || !apellido || !correo || !contrasena) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  }
+
+  if (!correo.includes('@')) {
     return res.status(400).json({ error: 'Correo electrónico inválido' });
   }
   try {
