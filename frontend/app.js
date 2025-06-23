@@ -27,15 +27,19 @@ async function addToCart(productId) {
   }
 
   try {
-    await fetch("/api/cart", {
+    const res = await fetch(`${window.location.origin}/api/cart`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ usuarioId: user.id, productoId, cantidad: 1 }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "No se pudo agregar el producto.");
+    }
     alert("Producto agregado al carrito");
     viewCart();
   } catch (e) {
-    alert("No se pudo agregar el producto. Intenta nuevamente.");
+    alert(e.message || "No se pudo agregar el producto. Intenta nuevamente.");
   }
 }
 
