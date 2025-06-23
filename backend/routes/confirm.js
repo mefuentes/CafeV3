@@ -53,40 +53,40 @@ function createPdf(lines) {
 }
 
 router.post('/confirm', (req, res) => {
-  const { userId, method } = req.body;
+  const { usuarioId, method } = req.body;
 
   const q = `
-    SELECT c.productId, c.quantity, p.name, p.price
-    FROM cart c
-    JOIN products p ON c.productId = p.id
-    WHERE c.userId = ?
+    SELECT c.productoId, c.cantidad, p.nombre, p.precio
+    FROM carrito c
+    JOIN productos p ON c.productoId = p.id
+    WHERE c.usuarioId = ?
   `;
 
-  db.all(q, [userId], (err, items) => {
+  db.all(q, [usuarioId], (err, items) => {
     if (err) return res.status(500).json({ error: err.message });
 
     if (!items.length) {
       return res.json({ message: "No hay productos en el carrito." });
     }
 
-    db.get('SELECT COALESCE(MAX(orderId), 0) as maxId FROM orders', (err2, row) => {
+    db.get('SELECT COALESCE(MAX(ordenId), 0) as maxId FROM ordenes', (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
 
       const orderId = (row ? row.maxId : 0) + 1;
 
       const stmt = db.prepare(
-        'INSERT INTO orders (orderId, userId, productId, productName, productPrice, quantity, paymentMethod) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO ordenes (ordenId, usuarioId, productoId, nombreProducto, precioProducto, cantidad, metodoPago) VALUES (?, ?, ?, ?, ?, ?, ?)'
       );
       items.forEach(i => {
-        stmt.run(orderId, userId, i.productId, i.name, i.price, i.quantity, method);
+        stmt.run(orderId, usuarioId, i.productoId, i.nombre, i.precio, i.cantidad, method);
       });
       stmt.finalize(err => {
         if (err) return res.status(500).json({ error: err.message });
 
-        db.run('INSERT INTO invoices (orderId, userId) VALUES (?, ?)', [orderId, userId], function(err3) {
+        db.run('INSERT INTO facturas (ordenId, usuarioId) VALUES (?, ?)', [orderId, usuarioId], function(err3) {
           if (err3) return res.status(500).json({ error: err3.message });
           const invoiceId = this.lastID;
-          db.run('DELETE FROM cart WHERE userId = ?', [userId], function(err) {
+          db.run('DELETE FROM carrito WHERE usuarioId = ?', [usuarioId], function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: "Compra confirmada y registrada.", orderId, invoiceId });
           });
@@ -98,14 +98,14 @@ router.post('/confirm', (req, res) => {
 
 router.get('/invoice/:orderId', (req, res) => {
   const { orderId } = req.params;
-  db.all('SELECT * FROM orders WHERE orderId = ?', [orderId], (err, rows) => {
+  db.all('SELECT * FROM ordenes WHERE ordenId = ?', [orderId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!rows.length) return res.status(404).json({ error: 'Orden no encontrada' });
 
-    const userId = rows[0].userId;
-    db.get('SELECT nombre, apellido FROM users WHERE id = ?', [userId], (err2, user) => {
+    const userId = rows[0].usuarioId;
+    db.get('SELECT nombre, apellido FROM usuarios WHERE id = ?', [userId], (err2, user) => {
       if (err2) return res.status(500).json({ error: err2.message });
-      db.get('SELECT id FROM invoices WHERE orderId = ?', [orderId], (err3, invoice) => {
+      db.get('SELECT id FROM facturas WHERE ordenId = ?', [orderId], (err3, invoice) => {
         if (err3) return res.status(500).json({ error: err3.message });
         if (!invoice) return res.status(404).json({ error: 'Factura no encontrada' });
 
@@ -124,9 +124,9 @@ router.get('/invoice/:orderId', (req, res) => {
           'Producto | Cant. | Precio | Subtotal'
         ];
         rows.forEach(r => {
-          const subtotal = r.productPrice * r.quantity;
+          const subtotal = r.precioProducto * r.cantidad;
           total += subtotal;
-          lines.push(`${r.productName} x${r.quantity} - $${r.productPrice} = $${subtotal}`);
+          lines.push(`${r.nombreProducto} x${r.cantidad} - $${r.precioProducto} = $${subtotal}`);
         });
         lines.push('-----------------------------');
         lines.push(`Total a pagar: $${total}`);
