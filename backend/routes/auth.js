@@ -20,7 +20,17 @@ router.post('/register', async (req, res) => {
       'INSERT INTO usuarios (nombre, apellido, correo, contrasena) VALUES (?, ?, ?, ?)',
       [nombre, apellido, correo, hash],
       function (err) {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+          if (
+            err.code === 'SQLITE_CONSTRAINT' &&
+            err.message.includes('usuarios.correo')
+          ) {
+            return res
+              .status(400)
+              .json({ error: 'Correo electrónico ya existente' });
+          }
+          return res.status(500).json({ error: err.message });
+        }
         res.json({ id: this.lastID, correo });
       }
     );
