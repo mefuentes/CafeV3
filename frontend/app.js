@@ -26,14 +26,17 @@ async function addToCart(productId) {
     return;
   }
 
-  await fetch("/api/cart", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuarioId: user.id, productoId, cantidad: 1 }),
-  });
-
-  alert("Producto agregado al carrito");
-  viewCart();
+  try {
+    await fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuarioId: user.id, productoId, cantidad: 1 }),
+    });
+    alert("Producto agregado al carrito");
+    viewCart();
+  } catch (e) {
+    alert("No se pudo agregar el producto. Intenta nuevamente.");
+  }
 }
 
 async function viewCart() {
@@ -67,26 +70,47 @@ async function removeFromCart(itemId) {
   viewCart();
 }
 
-function goToPayment() {
-  window.location.href = "payment.html";
+async function goToPayment() {
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user) {
+    alert("Debes iniciar sesión");
+    window.location.href = "login.html";
+    return;
+  }
+  try {
+    const res = await fetch(`/api/cart?usuarioId=${user.id}`);
+    const items = await res.json();
+    if (!items.length) {
+      alert("El carrito est\u00E1 vac\u00EDo");
+      return;
+    }
+    window.location.href = "payment.html";
+  } catch (e) {
+    alert("No se pudo verificar el carrito.");
+  }
 }
 
 async function confirmPurchase(method) {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user) return;
-
-  const res = await fetch("/api/confirm", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuarioId: user.id, method }),
-  });
-
-  const data = await res.json();
-  alert(`${data.message || "Compra confirmada."}\nMétodo: ${method}`);
-  if (data.orderId) {
-    const pdfRes = await fetch(`/api/invoice/${data.orderId}`);
-    if (pdfRes.ok) {
-      const blob = await pdfRes.blob();
+  try {
+    const cartRes = await fetch(`/api/cart?usuarioId=${user.id}`);
+    const cartItems = await cartRes.json();
+    if (!cartItems.length) {
+      alert("El carrito est\u00E1 vac\u00EDo");
+      return;
+    }
+    const res = await fetch("/api/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuarioId: user.id, method }),
+    });
+    const data = await res.json();
+    alert(`${data.message || "Compra confirmada."}\nM\u00E9todo: ${method}`);
+    if (data.orderId) {
+      const pdfRes = await fetch(`/api/invoice/${data.orderId}`);
+      if (pdfRes.ok) {
+        const blob = await pdfRes.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -96,7 +120,10 @@ async function confirmPurchase(method) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      }
     }
+    window.location.href = "index.html";
+  } catch (e) {
+    alert("No se pudo completar la compra.");
   }
-  window.location.href = "index.html";
 }
