@@ -9,9 +9,9 @@ async function loadProducts() {
     container.innerHTML += `
       <div class="product-card">
         <img src="assets/product-default.jpg" alt="Producto">
-        <h3>${p.name}</h3>
-        <p>${p.description}</p>
-        <strong>$${p.price}</strong><br>
+    <h3>${p.nombre}</h3>
+        <p>${p.descripcion}</p>
+        <strong>$${p.precio}</strong><br>
         <button onclick="addToCart(${p.id})">Agregar al carrito</button>
       </div>
     `;
@@ -29,7 +29,7 @@ async function addToCart(productId) {
   await fetch("/api/cart", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: user.id, productId, quantity: 1 }),
+    body: JSON.stringify({ usuarioId: user.id, productoId, cantidad: 1 }),
   });
 
   alert("Producto agregado al carrito");
@@ -40,7 +40,7 @@ async function viewCart() {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user) return;
 
-  const res = await fetch(`/api/cart?userId=${user.id}`);
+  const res = await fetch(`/api/cart?usuarioId=${user.id}`);
   const items = await res.json();
 
   const cartContainer = document.getElementById("cart");
@@ -48,11 +48,11 @@ async function viewCart() {
   cartContainer.innerHTML = "";
   let total = 0;
   items.forEach((item) => {
-    const subtotal = item.price * item.quantity;
+    const subtotal = item.precio * item.cantidad;
     total += subtotal;
     cartContainer.innerHTML += `
       <div class="cart-item">
-        ${item.name} x${item.quantity} - $${subtotal}
+        ${item.nombre} x${item.cantidad} - $${subtotal}
         <button onclick="removeFromCart(${item.id})">Eliminar</button>
       </div>
     `;
@@ -78,7 +78,7 @@ async function confirmPurchase(method) {
   const res = await fetch("/api/confirm", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: user.id, method }),
+    body: JSON.stringify({ usuarioId: user.id, method }),
   });
 
   const data = await res.json();

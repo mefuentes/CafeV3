@@ -4,7 +4,7 @@ const db = require('../models/db');
 const router = express.Router();
 
 router.get('/products', (req, res) => {
-  db.all('SELECT * FROM products', [], (err, rows) => {
+  db.all('SELECT * FROM productos', [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });

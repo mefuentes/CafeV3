@@ -12,7 +12,7 @@ router.post('/register', async (req, res) => {
   try {
     const hash = await bcrypt.hash(contrasena, 10);
     db.run(
-      'INSERT INTO users (nombre, apellido, correo, contrasena) VALUES (?, ?, ?, ?)',
+      'INSERT INTO usuarios (nombre, apellido, correo, contrasena) VALUES (?, ?, ?, ?)',
       [nombre, apellido, correo, hash],
       function (err) {
         if (err) return res.status(500).json({ error: err.message });
@@ -26,7 +26,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', (req, res) => {
   const { correo, contrasena } = req.body;
-  db.get('SELECT * FROM users WHERE correo = ?', [correo], async (err, row) => {
+  db.get('SELECT * FROM usuarios WHERE correo = ?', [correo], async (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(401).json({ error: 'Credenciales inválidas' });
     const match = await bcrypt.compare(contrasena, row.contrasena);
