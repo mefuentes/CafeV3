@@ -1,6 +1,11 @@
 
 const express = require('express');
-const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+
+// Simple password hashing using SHA-256 to avoid external dependencies
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(password).digest('hex');
+}
 const db = require('../models/db');
 const router = express.Router();
 
@@ -10,7 +15,7 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ error: 'Correo electrónico inválido' });
   }
   try {
-    const hash = await bcrypt.hash(contrasena, 10);
+    const hash = hashPassword(contrasena);
     db.run(
       'INSERT INTO usuarios (nombre, apellido, correo, contrasena) VALUES (?, ?, ?, ?)',
       [nombre, apellido, correo, hash],
@@ -29,7 +34,7 @@ router.post('/login', (req, res) => {
   db.get('SELECT * FROM usuarios WHERE correo = ?', [correo], async (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(401).json({ error: 'Credenciales inválidas' });
-    const match = await bcrypt.compare(contrasena, row.contrasena);
+    const match = hashPassword(contrasena) === row.contrasena;
     if (!match) return res.status(401).json({ error: 'Credenciales inválidas' });
     res.json({ id: row.id, correo: row.correo, nombre: row.nombre, apellido: row.apellido });
   });
