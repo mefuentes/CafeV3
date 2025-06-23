@@ -18,7 +18,7 @@ async function loadProducts() {
   });
 }
 
-async function addToCart(productId) {
+async function addToCart(productoId) {
   const user = JSON.parse(localStorage.getItem("user"));
   if (!user) {
     alert("Debes iniciar sesión");
