@@ -130,4 +130,39 @@ router.delete('/users/:id', (req, res) => {
   });
 });
 
+// ---- Invoice management ----
+
+router.get('/invoices', (req, res) => {
+  const q = `SELECT f.id, f.ordenId, f.usuarioId, f.creadoEn,
+                    u.nombre, u.apellido
+             FROM facturas f
+             LEFT JOIN usuarios u ON f.usuarioId = u.id
+             ORDER BY f.id DESC`;
+  db.all(q, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+router.get('/invoices/:id', (req, res) => {
+  const { id } = req.params;
+  const q = `SELECT f.id, f.ordenId, f.usuarioId, f.creadoEn,
+                    u.nombre, u.apellido
+             FROM facturas f
+             LEFT JOIN usuarios u ON f.usuarioId = u.id
+             WHERE f.id = ?`;
+  db.get(q, [id], (err, invoice) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!invoice) return res.status(404).json({ error: 'Factura no encontrada' });
+    db.all(
+      'SELECT nombreProducto, cantidad, precioProducto FROM ordenes WHERE ordenId = ?',
+      [invoice.ordenId],
+      (err2, items) => {
+        if (err2) return res.status(500).json({ error: err2.message });
+        res.json({ invoice, items });
+      }
+    );
+  });
+});
+
 module.exports = router;

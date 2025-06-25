@@ -11,6 +11,7 @@
       <button onclick="showModule('products')">Productos</button>
       <button onclick="showModule('users')">Usuarios</button>
       <button onclick="showModule('cobranzas')">Cobranzas</button>
+      <button onclick="showModule('invoices')">Facturas</button>
       <button onclick="logout()" class="logout-btn side">Cerrar Sesión</button>
     </div>
     <div class="main-content">
@@ -46,6 +47,12 @@
         <h3>Cobranzas</h3>
         <input id="searchOrders" placeholder="Buscar..." oninput="renderOrders()">
         <div id="orders"></div>
+      </div>
+
+      <div id="invoicesModule" class="module" style="display:none;">
+        <h3>Facturas</h3>
+        <input id="searchInvoices" placeholder="Buscar..." oninput="renderInvoices()">
+        <div id="invoices"></div>
       </div>
 
     </div>

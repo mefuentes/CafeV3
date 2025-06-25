@@ -20,6 +20,7 @@ let adminProducts = [];
 let userEditId = null;
 let adminUsers = [];
 let adminOrders = [];
+let adminInvoices = [];
 const paymentMethods = ['Tarjeta de Débito', 'Tarjeta de Crédito', 'Código QR'];
 
 function initAdmin() {
@@ -43,12 +44,16 @@ function showModule(name) {
     name === 'users' ? 'block' : 'none';
   document.getElementById('cobranzasModule').style.display =
     name === 'cobranzas' ? 'block' : 'none';
+  document.getElementById('invoicesModule').style.display =
+    name === 'invoices' ? 'block' : 'none';
   if (name === 'products') {
     loadAdminProducts();
   } else if (name === 'users') {
     loadAdminUsers();
   } else if (name === 'cobranzas') {
     loadAdminOrders();
+  } else if (name === 'invoices') {
+    loadAdminInvoices();
   }
 }
 
@@ -244,4 +249,49 @@ function deleteOrder(id) {
 function deleteItem(id) {
   if (!confirm('¿Eliminar este producto?')) return;
   fetch('/api/cobranzas/item/' + id, { method: 'DELETE' }).then(() => loadAdminOrders());
+}
+
+// ---- Invoice management ----
+
+function loadAdminInvoices() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  fetch('/admin/api/invoices', { headers: { 'x-user-id': user.id } })
+    .then(r => r.json())
+    .then(data => {
+      adminInvoices = data;
+      renderInvoices();
+    });
+}
+
+function renderInvoices() {
+  const query = (document.getElementById('searchInvoices').value || '').toLowerCase();
+  const container = document.getElementById('invoices');
+  container.innerHTML = '';
+  adminInvoices
+    .filter(inv =>
+      String(inv.id).includes(query) ||
+      String(inv.ordenId).includes(query) ||
+      (inv.nombre && inv.nombre.toLowerCase().includes(query)) ||
+      (inv.apellido && inv.apellido.toLowerCase().includes(query))
+    )
+    .forEach(inv => {
+      container.innerHTML +=
+        `<div>Factura ${inv.id} - Orden ${inv.ordenId} - ${inv.nombre || ''} ${inv.apellido || ''} - ${inv.creadoEn} ` +
+        `<button onclick="viewInvoice(${inv.id})">Ver</button></div>`;
+    });
+}
+
+function viewInvoice(id) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  fetch('/admin/api/invoices/' + id, { headers: { 'x-user-id': user.id } })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.items) return;
+      let msg = `Factura ${data.invoice.id} - Orden ${data.invoice.ordenId}\n`;
+      msg += `${data.invoice.nombre || ''} ${data.invoice.apellido || ''}\n`;
+      data.items.forEach(it => {
+        msg += `${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}\n`;
+      });
+      alert(msg);
+    });
 }
