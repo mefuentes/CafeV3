@@ -7,13 +7,14 @@
 </head>
 <body onload="initAdmin()">
   <div class="dashboard-container">
-    <div class="sidebar">
-      <button onclick="showModule('products')">Productos</button>
-      <button onclick="showModule('users')">Usuarios</button>
-      <button onclick="showModule('cobranzas')">Cobranzas</button>
-      <button onclick="showModule('invoices')">Facturas</button>
-      <button onclick="logout()" class="logout-btn side">Cerrar Sesión</button>
-    </div>
+      <div class="sidebar">
+        <button onclick="showModule('products')">Productos</button>
+        <button onclick="showModule('users')">Usuarios</button>
+        <button onclick="showModule('cobranzas')">Cobranzas</button>
+        <button onclick="showModule('invoices')">Facturas</button>
+        <button onclick="showModule('suppliers')">Proveedores</button>
+        <button onclick="logout()" class="logout-btn side">Cerrar Sesión</button>
+      </div>
     <div class="main-content">
       <h2>Panel de Administración</h2>
 
@@ -53,6 +54,18 @@
         <h3>Facturas</h3>
         <input id="searchInvoices" placeholder="Buscar..." oninput="renderInvoices()">
         <div id="invoices"></div>
+      </div>
+
+      <div id="suppliersModule" class="module" style="display:none;">
+        <h3>Proveedores</h3>
+        <input id="searchSuppliers" placeholder="Buscar..." oninput="loadAdminSuppliers()">
+        <div id="supplierForm">
+          <input id="supplierName" placeholder="Nombre">
+          <input id="supplierContact" placeholder="Contacto">
+          <input id="supplierPhone" placeholder="Teléfono">
+          <button id="saveSupplierBtn" onclick="createSupplier()">Agregar</button>
+        </div>
+        <div id="suppliers"></div>
       </div>
 
     </div>
