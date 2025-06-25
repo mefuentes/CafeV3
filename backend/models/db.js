@@ -9,7 +9,8 @@ db.serialize(() => {
     nombre TEXT,
     apellido TEXT,
     correo TEXT UNIQUE,
-    contrasena TEXT
+    contrasena TEXT,
+    isAdmin INTEGER DEFAULT 0
   )`);
 
   // Ensure new columns exist for older databases
@@ -30,6 +31,9 @@ db.serialize(() => {
     }
     if (!names.includes('contrasena')) {
       db.run('ALTER TABLE usuarios ADD COLUMN contrasena TEXT');
+    }
+    if (!names.includes('isAdmin')) {
+      db.run('ALTER TABLE usuarios ADD COLUMN isAdmin INTEGER DEFAULT 0');
     }
   });
 
