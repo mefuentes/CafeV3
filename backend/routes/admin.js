@@ -28,7 +28,7 @@ router.get('/users', (req, res) => {
 });
 
 router.get('/orders', (req, res) => {
-  const q = `SELECT o.ordenId, o.usuarioId, o.nombreProducto, o.precioProducto,
+  const q = `SELECT o.id, o.ordenId, o.usuarioId, o.productoId, o.nombreProducto, o.precioProducto,
                     o.cantidad, o.metodoPago, o.creadoEn,
                     u.nombre, u.apellido
              FROM ordenes o
