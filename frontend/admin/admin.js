@@ -19,6 +19,7 @@ let editId = null;
 let adminProducts = [];
 let userEditId = null;
 let adminUsers = [];
+let adminOrders = [];
 
 function initAdmin() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -39,10 +40,14 @@ function showModule(name) {
     name === 'products' ? 'block' : 'none';
   document.getElementById('usersModule').style.display =
     name === 'users' ? 'block' : 'none';
+  document.getElementById('cobranzasModule').style.display =
+    name === 'cobranzas' ? 'block' : 'none';
   if (name === 'products') {
     loadAdminProducts();
   } else if (name === 'users') {
     loadAdminUsers();
+  } else if (name === 'cobranzas') {
+    loadAdminOrders();
   }
 }
 
@@ -171,4 +176,35 @@ function createUser() {
     userEditId = null;
     loadAdminUsers();
   });
+}
+
+// ---- Orders management ----
+
+function loadAdminOrders() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  fetch('/admin/api/orders', { headers: { 'x-user-id': user.id } })
+    .then(r => r.json())
+    .then(data => {
+      adminOrders = data;
+      renderOrders();
+    });
+}
+
+function renderOrders() {
+  const query = (document.getElementById('searchOrders').value || '').toLowerCase();
+  const container = document.getElementById('orders');
+  container.innerHTML = '';
+  adminOrders
+    .filter(o =>
+      o.nombreProducto.toLowerCase().includes(query) ||
+      String(o.ordenId).includes(query) ||
+      (o.nombre && o.nombre.toLowerCase().includes(query)) ||
+      (o.apellido && o.apellido.toLowerCase().includes(query))
+    )
+    .forEach(o => {
+      container.innerHTML +=
+        `<div>Orden ${o.ordenId} - ${o.nombre || ''} ${o.apellido || ''} ` +
+        `(${o.usuarioId}) - ${o.nombreProducto} x${o.cantidad} - $${o.precioProducto} ` +
+        `- ${o.metodoPago} - ${o.creadoEn}</div>`;
+    });
 }
