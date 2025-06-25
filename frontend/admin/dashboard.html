@@ -10,11 +10,12 @@
     <h2>Panel de Administración</h2>
     <button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
     <h3>Productos</h3>
+    <input id="search" placeholder="Buscar..." oninput="loadAdminProducts()">
     <div id="productForm">
       <input id="newName" placeholder="Nombre">
       <input id="newDesc" placeholder="Descripción">
       <input id="newPrice" type="number" placeholder="Precio">
-      <button onclick="createProduct()">Agregar</button>
+      <button id="saveBtn" onclick="createProduct()">Agregar</button>
     </div>
     <div id="products"></div>
   </div>
