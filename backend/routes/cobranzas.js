@@ -34,7 +34,7 @@ router.post('/cobranzas', (req, res) => {
           if (pending === 0) {
             stmt.finalize(e => {
               if (e) return res.status(500).json({ error: e.message });
-              res.json({ orderId });
+              res.status(201).json({ orderId });
             });
           }
         });
@@ -74,6 +74,7 @@ router.put('/cobranzas/:ordenId', (req, res) => {
   if (!metodoPago) return res.status(400).json({ error: 'Metodo de pago requerido' });
   db.run('UPDATE ordenes SET metodoPago = ? WHERE ordenId = ?', [metodoPago, req.params.ordenId], function(err) {
     if (err) return res.status(500).json({ error: err.message });
+    if (!this.changes) return res.status(404).json({ error: 'Cobranza no encontrada' });
     res.json({ updated: this.changes });
   });
 });
@@ -81,10 +82,11 @@ router.put('/cobranzas/:ordenId', (req, res) => {
 // Eliminar una cobranza
 router.delete('/cobranzas/:ordenId', (req, res) => {
   const { ordenId } = req.params;
-  db.serialize(() => {
-    db.run('DELETE FROM facturas WHERE ordenId = ?', [ordenId]);
-    db.run('DELETE FROM ordenes WHERE ordenId = ?', [ordenId], function(err) {
-      if (err) return res.status(500).json({ error: err.message });
+  db.run('DELETE FROM facturas WHERE ordenId = ?', [ordenId], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    db.run('DELETE FROM ordenes WHERE ordenId = ?', [ordenId], function(err2) {
+      if (err2) return res.status(500).json({ error: err2.message });
+      if (!this.changes) return res.status(404).json({ error: 'Cobranza no encontrada' });
       res.json({ deleted: this.changes });
     });
   });
