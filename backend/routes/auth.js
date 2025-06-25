@@ -52,7 +52,13 @@ router.post('/login', (req, res) => {
     if (!row) return res.status(401).json({ error: 'Credenciales inválidas' });
     const match = hashPassword(contrasena) === row.contrasena;
     if (!match) return res.status(401).json({ error: 'Credenciales inválidas' });
-    res.json({ id: row.id, correo: row.correo, nombre: row.nombre, apellido: row.apellido });
+    res.json({
+      id: row.id,
+      correo: row.correo,
+      nombre: row.nombre,
+      apellido: row.apellido,
+      isAdmin: row.isAdmin
+    });
   });
 });
 
