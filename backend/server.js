@@ -7,6 +7,7 @@ const confirmRoutes = require('./routes/confirm');
 const productRoutes = require('./routes/products');
 const cartRoutes = require('./routes/cart');
 const adminRoutes = require('./routes/admin');
+const cobranzaRoutes = require('./routes/cobranzas');
 
 const app = express();
 app.use(cors());
@@ -30,6 +31,7 @@ app.use('/api', authRoutes);
 app.use('/api', productRoutes);
 app.use('/api', cartRoutes);
 app.use('/api', confirmRoutes);
+app.use('/api', cobranzaRoutes);
 app.use('/admin/api', adminRoutes);
 
 const PORT = process.env.PORT || 3000;
