@@ -15,6 +15,9 @@ function adminLogin() {
     });
 }
 
+let editId = null;
+let adminProducts = [];
+
 function checkAdmin() {
   const user = JSON.parse(localStorage.getItem('user'));
   if (!user || !user.isAdmin) {
@@ -30,13 +33,15 @@ function logout() {
 }
 
 function loadAdminProducts() {
-  fetch('/api/products')
+  const query = document.getElementById('search').value || '';
+  fetch('/api/products?search=' + encodeURIComponent(query))
     .then(r => r.json())
     .then(data => {
+      adminProducts = data;
       const container = document.getElementById('products');
       container.innerHTML = '';
       data.forEach(p => {
-        container.innerHTML += `<div>${p.nombre} - $${p.precio} <button onclick="deleteProduct(${p.id})">Eliminar</button></div>`;
+        container.innerHTML += `<div>${p.nombre} - $${p.precio} <button onclick="editProduct(${p.id})">Editar</button> <button onclick="deleteProduct(${p.id})">Eliminar</button></div>`;
       });
     });
 }
@@ -49,13 +54,25 @@ function deleteProduct(id) {
   }).then(() => loadAdminProducts());
 }
 
+function editProduct(id) {
+  const p = adminProducts.find(pr => pr.id === id);
+  if (!p) return;
+  document.getElementById('newName').value = p.nombre;
+  document.getElementById('newDesc').value = p.descripcion;
+  document.getElementById('newPrice').value = p.precio;
+  document.getElementById('saveBtn').textContent = 'Guardar';
+  editId = id;
+}
+
 function createProduct() {
   const user = JSON.parse(localStorage.getItem('user'));
   const nombre = document.getElementById('newName').value;
   const descripcion = document.getElementById('newDesc').value;
   const precio = parseFloat(document.getElementById('newPrice').value);
-  fetch('/admin/api/products', {
-    method: 'POST',
+  const url = editId ? '/admin/api/products/' + editId : '/admin/api/products';
+  const method = editId ? 'PUT' : 'POST';
+  fetch(url, {
+    method,
     headers: {
       'Content-Type': 'application/json',
       'x-user-id': user.id
@@ -65,6 +82,8 @@ function createProduct() {
     document.getElementById('newName').value = '';
     document.getElementById('newDesc').value = '';
     document.getElementById('newPrice').value = '';
+    document.getElementById('saveBtn').textContent = 'Agregar';
+    editId = null;
     loadAdminProducts();
   });
 }
