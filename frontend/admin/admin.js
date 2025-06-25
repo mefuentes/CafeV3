@@ -20,6 +20,7 @@ let adminProducts = [];
 let userEditId = null;
 let adminUsers = [];
 let adminOrders = [];
+const paymentMethods = ['Tarjeta de Débito', 'Tarjeta de Crédito', 'Código QR'];
 
 function initAdmin() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -206,24 +207,41 @@ function renderOrders() {
         `<div>Orden ${o.ordenId} - ${o.nombre || ''} ${o.apellido || ''} ` +
         `(${o.usuarioId}) - ${o.nombreProducto} x${o.cantidad} - $${o.precioProducto} ` +
         `- ${o.metodoPago} - ${o.creadoEn} ` +
-        `<button onclick="editOrder(${o.ordenId})">Modificar</button> ` +
-        `<button onclick="deleteOrder(${o.ordenId})">Eliminar</button></div>`;
+        `<button onclick="editOrder(${o.id})">Modificar</button> ` +
+        `<button onclick="deleteItem(${o.id})">Eliminar Producto</button> ` +
+        `<button onclick="deleteOrder(${o.ordenId})">Eliminar Orden</button></div>`;
     });
 }
 
 function editOrder(id) {
-  const order = adminOrders.find(o => o.ordenId === id);
+  const order = adminOrders.find(o => o.id === id);
   if (!order) return;
-  const nuevo = prompt('Nuevo método de pago', order.metodoPago);
-  if (!nuevo) return;
-  fetch('/api/cobranzas/' + id, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ metodoPago: nuevo })
-  }).then(() => loadAdminOrders());
+  fetch('/api/products')
+    .then(r => r.json())
+    .then(prods => {
+      const prodList = prods.map(p => `${p.id}: ${p.nombre}`).join('\n');
+      const prodId = parseInt(prompt(`Producto (ID)\n${prodList}`, order.productoId));
+      if (!prods.find(p => p.id === prodId)) return alert('Producto inválido');
+      const cantidad = parseInt(prompt('Cantidad', order.cantidad));
+      if (!cantidad) return;
+      const precio = parseFloat(prompt('Precio', order.precioProducto));
+      if (!precio) return;
+      const metodo = prompt(`Método de pago (${paymentMethods.join(', ')})`, order.metodoPago);
+      if (!paymentMethods.includes(metodo)) return alert('Método inválido');
+      fetch('/api/cobranzas/item/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productoId: prodId, cantidad, precioProducto: precio, metodoPago: metodo })
+      }).then(() => loadAdminOrders());
+    });
 }
 
 function deleteOrder(id) {
   if (!confirm('¿Eliminar la cobranza?')) return;
   fetch('/api/cobranzas/' + id, { method: 'DELETE' }).then(() => loadAdminOrders());
+}
+
+function deleteItem(id) {
+  if (!confirm('¿Eliminar este producto?')) return;
+  fetch('/api/cobranzas/item/' + id, { method: 'DELETE' }).then(() => loadAdminOrders());
 }
