@@ -21,6 +21,8 @@ let userEditId = null;
 let adminUsers = [];
 let adminOrders = [];
 let adminInvoices = [];
+let adminSuppliers = [];
+let supplierEditId = null;
 const paymentMethods = ['Tarjeta de Débito', 'Tarjeta de Crédito', 'Código QR'];
 
 function initAdmin() {
@@ -46,6 +48,8 @@ function showModule(name) {
     name === 'cobranzas' ? 'block' : 'none';
   document.getElementById('invoicesModule').style.display =
     name === 'invoices' ? 'block' : 'none';
+  document.getElementById('suppliersModule').style.display =
+    name === 'suppliers' ? 'block' : 'none';
   if (name === 'products') {
     loadAdminProducts();
   } else if (name === 'users') {
@@ -54,6 +58,8 @@ function showModule(name) {
     loadAdminOrders();
   } else if (name === 'invoices') {
     loadAdminInvoices();
+  } else if (name === 'suppliers') {
+    loadAdminSuppliers();
   }
 }
 
@@ -294,4 +300,67 @@ function viewInvoice(id) {
       });
       alert(msg);
     });
+}
+
+// ---- Suppliers management ----
+
+function loadAdminSuppliers() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const query = document.getElementById('searchSuppliers').value || '';
+  fetch('/admin/api/suppliers?search=' + encodeURIComponent(query), {
+    headers: { 'x-user-id': user.id }
+  })
+    .then(r => r.json())
+    .then(data => {
+      adminSuppliers = data;
+      const container = document.getElementById('suppliers');
+      container.innerHTML = '';
+      data.forEach(s => {
+        container.innerHTML +=
+          `<div>${s.nombre} - ${s.contacto || ''} - ${s.telefono || ''} ` +
+          `<button onclick="editSupplier(${s.id})">Editar</button> ` +
+          `<button onclick="deleteSupplier(${s.id})">Eliminar</button></div>`;
+      });
+    });
+}
+
+function deleteSupplier(id) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  fetch('/admin/api/suppliers/' + id, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', 'x-user-id': user.id }
+  }).then(() => loadAdminSuppliers());
+}
+
+function editSupplier(id) {
+  const s = adminSuppliers.find(sp => sp.id === id);
+  if (!s) return;
+  document.getElementById('supplierName').value = s.nombre;
+  document.getElementById('supplierContact').value = s.contacto || '';
+  document.getElementById('supplierPhone').value = s.telefono || '';
+  document.getElementById('saveSupplierBtn').textContent = 'Guardar';
+  supplierEditId = id;
+}
+
+function createSupplier() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const nombre = document.getElementById('supplierName').value;
+  const contacto = document.getElementById('supplierContact').value;
+  const telefono = document.getElementById('supplierPhone').value;
+  const url = supplierEditId
+    ? '/admin/api/suppliers/' + supplierEditId
+    : '/admin/api/suppliers';
+  const method = supplierEditId ? 'PUT' : 'POST';
+  fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+    body: JSON.stringify({ nombre, contacto, telefono })
+  }).then(() => {
+    document.getElementById('supplierName').value = '';
+    document.getElementById('supplierContact').value = '';
+    document.getElementById('supplierPhone').value = '';
+    document.getElementById('saveSupplierBtn').textContent = 'Agregar';
+    supplierEditId = null;
+    loadAdminSuppliers();
+  });
 }

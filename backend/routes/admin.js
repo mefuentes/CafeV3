@@ -165,4 +165,69 @@ router.get('/invoices/:id', (req, res) => {
   });
 });
 
+// ---- Suppliers management ----
+
+router.get('/suppliers', (req, res) => {
+  const search = req.query.search || '';
+  const like = `%${search}%`;
+  const q =
+    'SELECT * FROM proveedores WHERE nombre LIKE ? OR contacto LIKE ? OR telefono LIKE ?';
+  db.all(q, [like, like, like], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+router.get('/suppliers/:id', (req, res) => {
+  db.get('SELECT * FROM proveedores WHERE id = ?', [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Proveedor no encontrado' });
+    res.json(row);
+  });
+});
+
+router.post('/suppliers', (req, res) => {
+  const { nombre, contacto, telefono } = req.body;
+  db.run(
+    'INSERT INTO proveedores (nombre, contacto, telefono) VALUES (?, ?, ?)',
+    [nombre, contacto, telefono],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID });
+    }
+  );
+});
+
+router.put('/suppliers/:id', (req, res) => {
+  const { nombre, contacto, telefono } = req.body;
+  const fields = [];
+  const params = [];
+  if (nombre !== undefined) {
+    fields.push('nombre = ?');
+    params.push(nombre);
+  }
+  if (contacto !== undefined) {
+    fields.push('contacto = ?');
+    params.push(contacto);
+  }
+  if (telefono !== undefined) {
+    fields.push('telefono = ?');
+    params.push(telefono);
+  }
+  if (!fields.length) return res.json({ updated: 0 });
+  params.push(req.params.id);
+  const q = 'UPDATE proveedores SET ' + fields.join(', ') + ' WHERE id = ?';
+  db.run(q, params, function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ updated: this.changes });
+  });
+});
+
+router.delete('/suppliers/:id', (req, res) => {
+  db.run('DELETE FROM proveedores WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ deleted: this.changes });
+  });
+});
+
 module.exports = router;

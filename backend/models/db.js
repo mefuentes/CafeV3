@@ -98,6 +98,13 @@ db.serialize(() => {
     FOREIGN KEY(usuarioId) REFERENCES usuarios(id)
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS proveedores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT,
+    contacto TEXT,
+    telefono TEXT
+  )`);
+
   // Ensure new columns exist for databases created with older versions
   db.all('PRAGMA table_info(ordenes)', (err, columns) => {
     if (err) return;
