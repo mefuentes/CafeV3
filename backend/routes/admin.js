@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const db = require('../models/db');
 const router = express.Router();
 
@@ -16,7 +17,11 @@ function checkAdmin(req, res, next) {
 router.use(checkAdmin);
 
 router.get('/users', (req, res) => {
-  db.all('SELECT id, nombre, apellido, correo, isAdmin FROM usuarios', (err, rows) => {
+  const search = req.query.search || '';
+  const like = `%${search}%`;
+  const q =
+    'SELECT id, nombre, apellido, correo, isAdmin FROM usuarios WHERE nombre LIKE ? OR apellido LIKE ? OR correo LIKE ?';
+  db.all(q, [like, like, like], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
@@ -61,6 +66,65 @@ router.put('/products/:id', (req, res) => {
 
 router.delete('/products/:id', (req, res) => {
   db.run('DELETE FROM productos WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ deleted: this.changes });
+  });
+});
+
+// ---- User management ----
+
+function hashPassword(pw) {
+  return crypto.createHash('sha256').update(pw).digest('hex');
+}
+
+router.post('/users', (req, res) => {
+  const { nombre, apellido, correo, contrasena, isAdmin } = req.body;
+  const hash = contrasena ? hashPassword(contrasena) : null;
+  db.run(
+    'INSERT INTO usuarios (nombre, apellido, correo, contrasena, isAdmin) VALUES (?, ?, ?, ?, ?)',
+    [nombre, apellido, correo, hash, isAdmin ? 1 : 0],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ id: this.lastID });
+    }
+  );
+});
+
+router.put('/users/:id', (req, res) => {
+  const { nombre, apellido, correo, contrasena, isAdmin } = req.body;
+  const fields = [];
+  const params = [];
+  if (nombre !== undefined) {
+    fields.push('nombre = ?');
+    params.push(nombre);
+  }
+  if (apellido !== undefined) {
+    fields.push('apellido = ?');
+    params.push(apellido);
+  }
+  if (correo !== undefined) {
+    fields.push('correo = ?');
+    params.push(correo);
+  }
+  if (isAdmin !== undefined) {
+    fields.push('isAdmin = ?');
+    params.push(isAdmin ? 1 : 0);
+  }
+  if (contrasena) {
+    fields.push('contrasena = ?');
+    params.push(hashPassword(contrasena));
+  }
+  if (!fields.length) return res.json({ updated: 0 });
+  params.push(req.params.id);
+  const q = 'UPDATE usuarios SET ' + fields.join(', ') + ' WHERE id = ?';
+  db.run(q, params, function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ updated: this.changes });
+  });
+});
+
+router.delete('/users/:id', (req, res) => {
+  db.run('DELETE FROM usuarios WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ deleted: this.changes });
   });

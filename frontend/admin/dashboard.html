@@ -5,19 +5,43 @@
   <title>Admin Dashboard</title>
   <link rel="stylesheet" href="../styles.css">
 </head>
-<body onload="checkAdmin()">
-  <div class="auth-container">
-    <h2>Panel de Administración</h2>
-    <button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
-    <h3>Productos</h3>
-    <input id="search" placeholder="Buscar..." oninput="loadAdminProducts()">
-    <div id="productForm">
-      <input id="newName" placeholder="Nombre">
-      <input id="newDesc" placeholder="Descripción">
-      <input id="newPrice" type="number" placeholder="Precio">
-      <button id="saveBtn" onclick="createProduct()">Agregar</button>
+<body onload="initAdmin()">
+  <div class="dashboard-container">
+    <div class="sidebar">
+      <button onclick="showModule('products')">Productos</button>
+      <button onclick="showModule('users')">Usuarios</button>
+      <button onclick="logout()" class="logout-btn side">Cerrar Sesión</button>
     </div>
-    <div id="products"></div>
+    <div class="main-content">
+      <h2>Panel de Administración</h2>
+
+      <div id="productsModule" class="module">
+        <h3>Productos</h3>
+        <input id="search" placeholder="Buscar..." oninput="loadAdminProducts()">
+        <div id="productForm">
+          <input id="newName" placeholder="Nombre">
+          <input id="newDesc" placeholder="Descripción">
+          <input id="newPrice" type="number" placeholder="Precio">
+          <button id="saveBtn" onclick="createProduct()">Agregar</button>
+        </div>
+        <div id="products"></div>
+      </div>
+
+      <div id="usersModule" class="module" style="display:none;">
+        <h3>Usuarios</h3>
+        <input id="searchUsers" placeholder="Buscar..." oninput="loadAdminUsers()">
+        <div id="userForm">
+          <input id="userName" placeholder="Nombre">
+          <input id="userLast" placeholder="Apellido">
+          <input id="userEmail" placeholder="Correo">
+          <input id="userPass" type="password" placeholder="Contraseña">
+          <label><input type="checkbox" id="userAdmin"> Admin</label>
+          <button id="saveUserBtn" onclick="createUser()">Agregar</button>
+        </div>
+        <div id="users"></div>
+      </div>
+
+    </div>
   </div>
   <script src="admin.js"></script>
 </body>
