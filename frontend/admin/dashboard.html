@@ -10,6 +10,7 @@
     <div class="sidebar">
       <button onclick="showModule('products')">Productos</button>
       <button onclick="showModule('users')">Usuarios</button>
+      <button onclick="showModule('cobranzas')">Cobranzas</button>
       <button onclick="logout()" class="logout-btn side">Cerrar Sesión</button>
     </div>
     <div class="main-content">
@@ -39,6 +40,12 @@
           <button id="saveUserBtn" onclick="createUser()">Agregar</button>
         </div>
         <div id="users"></div>
+      </div>
+
+      <div id="cobranzasModule" class="module" style="display:none;">
+        <h3>Cobranzas</h3>
+        <input id="searchOrders" placeholder="Buscar..." oninput="renderOrders()">
+        <div id="orders"></div>
       </div>
 
     </div>
