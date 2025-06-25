@@ -205,6 +205,25 @@ function renderOrders() {
       container.innerHTML +=
         `<div>Orden ${o.ordenId} - ${o.nombre || ''} ${o.apellido || ''} ` +
         `(${o.usuarioId}) - ${o.nombreProducto} x${o.cantidad} - $${o.precioProducto} ` +
-        `- ${o.metodoPago} - ${o.creadoEn}</div>`;
+        `- ${o.metodoPago} - ${o.creadoEn} ` +
+        `<button onclick="editOrder(${o.ordenId})">Modificar</button> ` +
+        `<button onclick="deleteOrder(${o.ordenId})">Eliminar</button></div>`;
     });
+}
+
+function editOrder(id) {
+  const order = adminOrders.find(o => o.ordenId === id);
+  if (!order) return;
+  const nuevo = prompt('Nuevo método de pago', order.metodoPago);
+  if (!nuevo) return;
+  fetch('/api/cobranzas/' + id, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ metodoPago: nuevo })
+  }).then(() => loadAdminOrders());
+}
+
+function deleteOrder(id) {
+  if (!confirm('¿Eliminar la cobranza?')) return;
+  fetch('/api/cobranzas/' + id, { method: 'DELETE' }).then(() => loadAdminOrders());
 }
