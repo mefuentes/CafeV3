@@ -56,7 +56,7 @@ router.post('/confirm', (req, res) => {
   const { usuarioId, method } = req.body;
 
   const q = `
-    SELECT c.productoId, c.cantidad, p.nombre, p.precio
+    SELECT c.productoId, c.cantidad, p.nombre, p.precio, p.stock
     FROM carrito c
     JOIN productos p ON c.productoId = p.id
     WHERE c.usuarioId = ?
@@ -67,6 +67,13 @@ router.post('/confirm', (req, res) => {
 
     if (!items.length) {
       return res.json({ message: "No hay productos en el carrito." });
+    }
+
+    const sinStock = items.find(it => !it.stock || it.stock < it.cantidad);
+    if (sinStock) {
+      return res
+        .status(400)
+        .json({ error: `No hay stock suficiente de ${sinStock.nombre}` });
     }
 
     db.get('SELECT COALESCE(MAX(ordenId), 0) as maxId FROM ordenes', (err2, row) => {

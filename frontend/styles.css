@@ -75,6 +75,10 @@ header button {
   height: 120px;
   object-fit: cover;
 }
+.out-of-stock {
+  color: red;
+  font-weight: bold;
+}
 .cart-container {
   padding: 20px;
 }

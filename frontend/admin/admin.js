@@ -424,16 +424,23 @@ function createPurchase() {
     const prodList = prods.map(p => `${p.id}: ${p.nombre}`).join('\n');
     const proveedorId = parseInt(prompt(`Proveedor (ID)\n${supList}`));
     if (!proveedorId) return;
-    const productoId = parseInt(prompt(`Producto (ID)\n${prodList}`));
-    if (!productoId) return;
-    const cantidad = parseInt(prompt('Cantidad', '1'));
-    if (!cantidad) return;
-    const precio = parseFloat(prompt('Precio', '0'));
-    if (!precio) return;
+    const items = [];
+    let addMore = true;
+    while (addMore) {
+      const productoId = parseInt(prompt(`Producto (ID)\n${prodList}`));
+      if (!productoId) break;
+      const cantidad = parseInt(prompt('Cantidad', '1'));
+      if (!cantidad) break;
+      const precio = parseFloat(prompt('Precio', '0'));
+      if (!precio) break;
+      items.push({ productoId, cantidad, precioProducto: precio });
+      addMore = confirm('¿Agregar otro producto?');
+    }
+    if (!items.length) return;
     fetch('/admin/api/purchase-orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-      body: JSON.stringify({ proveedorId, items: [{ productoId, cantidad, precioProducto: precio }] })
+      body: JSON.stringify({ proveedorId, items })
     }).then(() => loadAdminPurchases());
   });
 }
