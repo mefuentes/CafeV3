@@ -474,11 +474,18 @@ function viewPurchase(id) {
     .then(r => r.json())
     .then(items => {
       if (!items.length) return;
-      let msg = `Orden ${id} - ${items[0].proveedorNombre || ''}\n`;
+      let total = 0;
+      let html = `<h3>Orden ${id}</h3>`;
+      html += `<p><strong>Proveedor:</strong> ${items[0].proveedorNombre || ''}</p>`;
+      html += '<ul>';
       items.forEach(it => {
-        msg += `${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}\n`;
+        const subtotal = it.cantidad * it.precioProducto;
+        total += subtotal;
+        html += `<li>${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}</li>`;
       });
-      alert(msg);
+      html += '</ul>';
+      html += `<p><strong>Importe Total: $${total.toFixed(2)}</strong></p>`;
+      openModal(html);
     });
 }
 
@@ -498,4 +505,13 @@ function deletePurchaseOrder(id) {
     method: 'DELETE',
     headers: { 'x-user-id': user.id }
   }).then(() => loadAdminPurchases());
+}
+
+function openModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
 }
