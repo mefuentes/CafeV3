@@ -314,12 +314,18 @@ function viewInvoice(id) {
     .then(r => r.json())
     .then(data => {
       if (!data.items) return;
-      let msg = `Factura ${data.invoice.id} - Cobranza ${data.invoice.ordenId}\n`;
-      msg += `${data.invoice.nombre || ''} ${data.invoice.apellido || ''}\n`;
+      let total = 0;
+      let html = `<h3>Factura ${data.invoice.id}</h3>`;
+      html += `<p><strong>Cobranza:</strong> ${data.invoice.ordenId}</p>`;
+      html += `<p><strong>Cliente:</strong> ${data.invoice.nombre || ''} ${data.invoice.apellido || ''}</p>`;
+      html += '<ul>';
       data.items.forEach(it => {
-        msg += `${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}\n`;
+        total += it.cantidad * it.precioProducto;
+        html += `<li>${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}</li>`;
       });
-      alert(msg);
+      html += '</ul>';
+      html += `<p><strong>Total Factura: $${total.toFixed(2)}</strong></p>`;
+      openModal(html);
     });
 }
 
@@ -411,19 +417,33 @@ function renderPurchases() {
   const query = (document.getElementById('searchPurchases').value || '').toLowerCase();
   const container = document.getElementById('purchases');
   container.innerHTML = '';
-  adminPurchases
-    .filter(p =>
-      p.nombreProducto.toLowerCase().includes(query) ||
-      String(p.ordenId).includes(query) ||
-      (p.proveedorNombre && p.proveedorNombre.toLowerCase().includes(query))
+  const grouped = {};
+  adminPurchases.forEach(it => {
+    if (!grouped[it.ordenId]) {
+      grouped[it.ordenId] = {
+        ordenId: it.ordenId,
+        proveedorId: it.proveedorId,
+        proveedorNombre: it.proveedorNombre,
+        creadoEn: it.creadoEn,
+        items: 0,
+        total: 0
+      };
+    }
+    grouped[it.ordenId].items += 1;
+    grouped[it.ordenId].total += it.cantidad * it.precioProducto;
+  });
+  Object.values(grouped)
+    .filter(o =>
+      String(o.ordenId).includes(query) ||
+      (o.proveedorNombre && o.proveedorNombre.toLowerCase().includes(query))
     )
-    .forEach(p => {
+    .sort((a, b) => b.ordenId - a.ordenId)
+    .forEach(o => {
       container.innerHTML +=
-        `<div>Orden ${p.ordenId} - ${p.proveedorNombre || ''} (${p.proveedorId}) - ` +
-        `${p.nombreProducto} x${p.cantidad} - $${p.precioProducto} - ${p.creadoEn} ` +
-        `<button onclick="editPurchaseItem(${p.id})">Modificar</button> ` +
-        `<button onclick="viewPurchase(${p.ordenId})">Visualizar</button> ` +
-        `<button onclick="deletePurchaseOrder(${p.ordenId})">Eliminar Orden</button></div>`;
+        `<div>Orden ${o.ordenId} - ${o.proveedorNombre || ''} (${o.proveedorId}) - ` +
+        `${o.items} items - $${o.total.toFixed(2)} - ${o.creadoEn} ` +
+        `<button onclick="viewPurchase(${o.ordenId})">Visualizar</button> ` +
+        `<button onclick="deletePurchaseOrder(${o.ordenId})">Eliminar Orden</button></div>`;
     });
 }
 
