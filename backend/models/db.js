@@ -4,7 +4,7 @@ const dbPath = process.env.DB_PATH || './db.sqlite';
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+  db.run(`CREATE TABLE IF NOT EXISTS clientes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT,
     apellido TEXT,
@@ -14,26 +14,26 @@ db.serialize(() => {
   )`);
 
   // Ensure new columns exist for older databases
-  db.all('PRAGMA table_info(usuarios)', (err, columns) => {
+  db.all('PRAGMA table_info(clientes)', (err, columns) => {
     if (err) return;
     const names = columns.map(c => c.name);
     if (!names.includes('nombre')) {
-      db.run('ALTER TABLE usuarios ADD COLUMN nombre TEXT');
+      db.run('ALTER TABLE clientes ADD COLUMN nombre TEXT');
     }
     if (!names.includes('apellido')) {
-      db.run('ALTER TABLE usuarios ADD COLUMN apellido TEXT');
+      db.run('ALTER TABLE clientes ADD COLUMN apellido TEXT');
     }
     if (!names.includes('correo')) {
-      db.run('ALTER TABLE usuarios ADD COLUMN correo TEXT');
+      db.run('ALTER TABLE clientes ADD COLUMN correo TEXT');
       db.run(
-        'CREATE UNIQUE INDEX IF NOT EXISTS usuarios_correo_unique ON usuarios(correo)'
+        'CREATE UNIQUE INDEX IF NOT EXISTS clientes_correo_unique ON clientes(correo)'
       );
     }
     if (!names.includes('contrasena')) {
-      db.run('ALTER TABLE usuarios ADD COLUMN contrasena TEXT');
+      db.run('ALTER TABLE clientes ADD COLUMN contrasena TEXT');
     }
     if (!names.includes('isAdmin')) {
-      db.run('ALTER TABLE usuarios ADD COLUMN isAdmin INTEGER DEFAULT 0');
+      db.run('ALTER TABLE clientes ADD COLUMN isAdmin INTEGER DEFAULT 0');
     }
   });
 
@@ -80,11 +80,11 @@ db.serialize(() => {
     usuarioId INTEGER,
     productoId INTEGER,
     cantidad INTEGER,
-    FOREIGN KEY(usuarioId) REFERENCES usuarios(id),
+    FOREIGN KEY(usuarioId) REFERENCES clientes(id),
     FOREIGN KEY(productoId) REFERENCES productos(id)
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS ordenes (
+  db.run(`CREATE TABLE IF NOT EXISTS cobranzas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ordenId INTEGER,
     usuarioId INTEGER,
@@ -94,7 +94,7 @@ db.serialize(() => {
     cantidad INTEGER,
     metodoPago TEXT,
     creadoEn DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(usuarioId) REFERENCES usuarios(id),
+    FOREIGN KEY(usuarioId) REFERENCES clientes(id),
     FOREIGN KEY(productoId) REFERENCES productos(id)
   )`);
 
@@ -103,8 +103,8 @@ db.serialize(() => {
     ordenId INTEGER,
     usuarioId INTEGER,
     creadoEn DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(ordenId) REFERENCES ordenes(ordenId),
-    FOREIGN KEY(usuarioId) REFERENCES usuarios(id)
+    FOREIGN KEY(ordenId) REFERENCES cobranzas(ordenId),
+    FOREIGN KEY(usuarioId) REFERENCES clientes(id)
   )`);
 
   db.run(`CREATE TABLE IF NOT EXISTS proveedores (
@@ -137,14 +137,14 @@ db.serialize(() => {
   });
 
   // Ensure new columns exist for databases created with older versions
-  db.all('PRAGMA table_info(ordenes)', (err, columns) => {
+  db.all('PRAGMA table_info(cobranzas)', (err, columns) => {
     if (err) return;
     const names = columns.map(c => c.name);
     if (!names.includes('ordenId')) {
-      db.run('ALTER TABLE ordenes ADD COLUMN ordenId INTEGER');
+      db.run('ALTER TABLE cobranzas ADD COLUMN ordenId INTEGER');
     }
     if (!names.includes('metodoPago')) {
-      db.run('ALTER TABLE ordenes ADD COLUMN metodoPago TEXT');
+      db.run('ALTER TABLE cobranzas ADD COLUMN metodoPago TEXT');
     }
   });
 });

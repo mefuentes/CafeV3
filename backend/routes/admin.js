@@ -6,7 +6,7 @@ const router = express.Router();
 function checkAdmin(req, res, next) {
   const id = req.header('x-user-id');
   if (!id) return res.status(401).json({ error: 'Falta ID de usuario' });
-  db.get('SELECT isAdmin FROM usuarios WHERE id = ?', [id], (err, row) => {
+  db.get('SELECT isAdmin FROM clientes WHERE id = ?', [id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row || row.isAdmin !== 1)
       return res.status(403).json({ error: 'Acceso denegado' });
@@ -20,7 +20,7 @@ router.get('/users', (req, res) => {
   const search = req.query.search || '';
   const like = `%${search}%`;
   const q =
-    'SELECT id, nombre, apellido, correo, isAdmin FROM usuarios WHERE nombre LIKE ? OR apellido LIKE ? OR correo LIKE ?';
+    'SELECT id, nombre, apellido, correo, isAdmin FROM clientes WHERE nombre LIKE ? OR apellido LIKE ? OR correo LIKE ?';
   db.all(q, [like, like, like], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
@@ -28,11 +28,13 @@ router.get('/users', (req, res) => {
 });
 
 router.get('/orders', (req, res) => {
-  const q = `SELECT o.id, o.ordenId, o.usuarioId, o.productoId, o.nombreProducto, o.precioProducto,
-                    o.cantidad, o.metodoPago, o.creadoEn,
-                    u.nombre, u.apellido
-             FROM ordenes o
-             LEFT JOIN usuarios u ON o.usuarioId = u.id
+  const q = `SELECT o.ordenId, o.usuarioId, o.metodoPago, o.creadoEn,
+                    u.nombre, u.apellido,
+                    COUNT(o.id) as items,
+                    SUM(o.precioProducto * o.cantidad) as total
+             FROM cobranzas o
+             LEFT JOIN clientes u ON o.usuarioId = u.id
+             GROUP BY o.ordenId
              ORDER BY o.ordenId DESC`;
   db.all(q, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -81,7 +83,7 @@ router.post('/users', (req, res) => {
   const { nombre, apellido, correo, contrasena, isAdmin } = req.body;
   const hash = contrasena ? hashPassword(contrasena) : null;
   db.run(
-    'INSERT INTO usuarios (nombre, apellido, correo, contrasena, isAdmin) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO clientes (nombre, apellido, correo, contrasena, isAdmin) VALUES (?, ?, ?, ?, ?)',
     [nombre, apellido, correo, hash, isAdmin ? 1 : 0],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
@@ -116,7 +118,7 @@ router.put('/users/:id', (req, res) => {
   }
   if (!fields.length) return res.json({ updated: 0 });
   params.push(req.params.id);
-  const q = 'UPDATE usuarios SET ' + fields.join(', ') + ' WHERE id = ?';
+  const q = 'UPDATE clientes SET ' + fields.join(', ') + ' WHERE id = ?';
   db.run(q, params, function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ updated: this.changes });
@@ -124,7 +126,7 @@ router.put('/users/:id', (req, res) => {
 });
 
 router.delete('/users/:id', (req, res) => {
-  db.run('DELETE FROM usuarios WHERE id = ?', [req.params.id], function (err) {
+  db.run('DELETE FROM clientes WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ deleted: this.changes });
   });
@@ -136,7 +138,7 @@ router.get('/invoices', (req, res) => {
   const q = `SELECT f.id, f.ordenId, f.usuarioId, f.creadoEn,
                     u.nombre, u.apellido
              FROM facturas f
-             LEFT JOIN usuarios u ON f.usuarioId = u.id
+             LEFT JOIN clientes u ON f.usuarioId = u.id
              ORDER BY f.id DESC`;
   db.all(q, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -149,13 +151,13 @@ router.get('/invoices/:id', (req, res) => {
   const q = `SELECT f.id, f.ordenId, f.usuarioId, f.creadoEn,
                     u.nombre, u.apellido
              FROM facturas f
-             LEFT JOIN usuarios u ON f.usuarioId = u.id
+             LEFT JOIN clientes u ON f.usuarioId = u.id
              WHERE f.id = ?`;
   db.get(q, [id], (err, invoice) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!invoice) return res.status(404).json({ error: 'Factura no encontrada' });
     db.all(
-      'SELECT nombreProducto, cantidad, precioProducto FROM ordenes WHERE ordenId = ?',
+      'SELECT nombreProducto, cantidad, precioProducto FROM cobranzas WHERE ordenId = ?',
       [invoice.ordenId],
       (err2, items) => {
         if (err2) return res.status(500).json({ error: err2.message });

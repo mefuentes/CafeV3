@@ -217,19 +217,17 @@ function renderOrders() {
   container.innerHTML = '';
   adminOrders
     .filter(o =>
-      o.nombreProducto.toLowerCase().includes(query) ||
       String(o.ordenId).includes(query) ||
       (o.nombre && o.nombre.toLowerCase().includes(query)) ||
       (o.apellido && o.apellido.toLowerCase().includes(query))
     )
     .forEach(o => {
       container.innerHTML +=
-        `<div>Orden ${o.ordenId} - ${o.nombre || ''} ${o.apellido || ''} ` +
-        `(${o.usuarioId}) - ${o.nombreProducto} x${o.cantidad} - $${o.precioProducto} ` +
-        `- ${o.metodoPago} - ${o.creadoEn} ` +
-        `<button onclick="editOrder(${o.id})">Modificar</button> ` +
-        `<button onclick="deleteItem(${o.id})">Eliminar Producto</button> ` +
-        `<button onclick="deleteOrder(${o.ordenId})">Eliminar Orden</button></div>`;
+        `<div>Cobranza ${o.ordenId} - ${o.nombre || ''} ${o.apellido || ''} ` +
+        `(${o.usuarioId}) - ${o.metodoPago} - ${o.creadoEn} - ` +
+        `${o.items} items - $${o.total} ` +
+        `<button onclick="viewOrder(${o.ordenId})">Ver</button> ` +
+        `<button onclick="deleteOrder(${o.ordenId})">Eliminar Cobranza</button></div>`;
     });
 }
 
@@ -266,6 +264,20 @@ function deleteItem(id) {
   fetch('/api/cobranzas/item/' + id, { method: 'DELETE' }).then(() => loadAdminOrders());
 }
 
+function viewOrder(id) {
+  fetch('/api/cobranzas/' + id)
+    .then(r => r.json())
+    .then(items => {
+      if (!items.length) return;
+      let html = `<h3>Cobranza ${id}</h3><ul>`;
+      items.forEach(it => {
+        html += `<li>${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}</li>`;
+      });
+      html += '</ul>';
+      openModal(html);
+    });
+}
+
 // ---- Invoice management ----
 
 function loadAdminInvoices() {
@@ -291,7 +303,7 @@ function renderInvoices() {
     )
     .forEach(inv => {
       container.innerHTML +=
-        `<div>Factura ${inv.id} - Orden ${inv.ordenId} - ${inv.nombre || ''} ${inv.apellido || ''} - ${inv.creadoEn} ` +
+        `<div>Factura ${inv.id} - Cobranza ${inv.ordenId} - ${inv.nombre || ''} ${inv.apellido || ''} - ${inv.creadoEn} ` +
         `<button onclick="viewInvoice(${inv.id})">Ver</button></div>`;
     });
 }
@@ -302,7 +314,7 @@ function viewInvoice(id) {
     .then(r => r.json())
     .then(data => {
       if (!data.items) return;
-      let msg = `Factura ${data.invoice.id} - Orden ${data.invoice.ordenId}\n`;
+      let msg = `Factura ${data.invoice.id} - Cobranza ${data.invoice.ordenId}\n`;
       msg += `${data.invoice.nombre || ''} ${data.invoice.apellido || ''}\n`;
       data.items.forEach(it => {
         msg += `${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}\n`;

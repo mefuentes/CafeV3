@@ -76,13 +76,13 @@ router.post('/confirm', (req, res) => {
         .json({ error: `No hay stock suficiente de ${sinStock.nombre}` });
     }
 
-    db.get('SELECT COALESCE(MAX(ordenId), 0) as maxId FROM ordenes', (err2, row) => {
+    db.get('SELECT COALESCE(MAX(ordenId), 0) as maxId FROM cobranzas', (err2, row) => {
       if (err2) return res.status(500).json({ error: err2.message });
 
       const orderId = (row ? row.maxId : 0) + 1;
 
       const stmt = db.prepare(
-        'INSERT INTO ordenes (ordenId, usuarioId, productoId, nombreProducto, precioProducto, cantidad, metodoPago) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO cobranzas (ordenId, usuarioId, productoId, nombreProducto, precioProducto, cantidad, metodoPago) VALUES (?, ?, ?, ?, ?, ?, ?)'
       );
       items.forEach(i => {
         stmt.run(orderId, usuarioId, i.productoId, i.nombre, i.precio, i.cantidad, method);
@@ -106,12 +106,12 @@ router.post('/confirm', (req, res) => {
 
 router.get('/invoice/:orderId', (req, res) => {
   const { orderId } = req.params;
-  db.all('SELECT * FROM ordenes WHERE ordenId = ?', [orderId], (err, rows) => {
+  db.all('SELECT * FROM cobranzas WHERE ordenId = ?', [orderId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!rows.length) return res.status(404).json({ error: 'Orden no encontrada' });
 
     const userId = rows[0].usuarioId;
-    db.get('SELECT nombre, apellido FROM usuarios WHERE id = ?', [userId], (err2, user) => {
+    db.get('SELECT nombre, apellido FROM clientes WHERE id = ?', [userId], (err2, user) => {
       if (err2) return res.status(500).json({ error: err2.message });
       db.get('SELECT id FROM facturas WHERE ordenId = ?', [orderId], (err3, invoice) => {
         if (err3) return res.status(500).json({ error: err3.message });
