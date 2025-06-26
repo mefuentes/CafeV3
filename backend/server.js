@@ -11,7 +11,8 @@ const cobranzaRoutes = require('./routes/cobranzas');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+// Allow larger JSON payloads to support base64-encoded images
+app.use(express.json({ limit: '10mb' }));
 // Sirve la página de inicio antes de la carpeta estática para evitar que index.html
 // intercepte la ruta raíz
 app.get('/', (req, res) =>
