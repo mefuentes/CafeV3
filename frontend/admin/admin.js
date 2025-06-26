@@ -409,7 +409,7 @@ function renderPurchases() {
         `<div>Orden ${p.ordenId} - ${p.proveedorNombre || ''} (${p.proveedorId}) - ` +
         `${p.nombreProducto} x${p.cantidad} - $${p.precioProducto} - ${p.creadoEn} ` +
         `<button onclick="editPurchaseItem(${p.id})">Modificar</button> ` +
-        `<button onclick="deletePurchaseItem(${p.id})">Eliminar Producto</button> ` +
+        `<button onclick="viewPurchase(${p.ordenId})">Visualizar</button> ` +
         `<button onclick="deletePurchaseOrder(${p.ordenId})">Eliminar Orden</button></div>`;
     });
 }
@@ -457,6 +457,20 @@ function editPurchaseItem(id) {
         headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
         body: JSON.stringify({ productoId: prodId, cantidad, precioProducto: precio })
       }).then(() => loadAdminPurchases());
+    });
+}
+
+function viewPurchase(id) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  fetch('/admin/api/purchase-orders/' + id, { headers: { 'x-user-id': user.id } })
+    .then(r => r.json())
+    .then(items => {
+      if (!items.length) return;
+      let msg = `Orden ${id} - ${items[0].proveedorNombre || ''}\n`;
+      items.forEach(it => {
+        msg += `${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}\n`;
+      });
+      alert(msg);
     });
 }
 

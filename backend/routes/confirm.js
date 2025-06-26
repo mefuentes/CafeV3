@@ -79,6 +79,7 @@ router.post('/confirm', (req, res) => {
       );
       items.forEach(i => {
         stmt.run(orderId, usuarioId, i.productoId, i.nombre, i.precio, i.cantidad, method);
+        db.run('UPDATE productos SET stock = stock - ? WHERE id = ?', [i.cantidad, i.productoId]);
       });
       stmt.finalize(err => {
         if (err) return res.status(500).json({ error: err.message });
