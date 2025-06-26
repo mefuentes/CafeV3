@@ -101,9 +101,18 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS proveedores (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT,
-    contacto TEXT,
+    correo TEXT,
     telefono TEXT
   )`);
+
+  db.all('PRAGMA table_info(proveedores)', (err, columns) => {
+    if (err) return;
+    const names = columns.map(c => c.name);
+    if (!names.includes('correo')) {
+      db.run('ALTER TABLE proveedores ADD COLUMN correo TEXT');
+      db.run('UPDATE proveedores SET correo = contacto WHERE correo IS NULL');
+    }
+  });
 
   // Ensure new columns exist for databases created with older versions
   db.all('PRAGMA table_info(ordenes)', (err, columns) => {
