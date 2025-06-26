@@ -46,15 +46,17 @@ router.post('/cart', (req, res) => {
 
 router.get('/cart', (req, res) => {
   const { usuarioId } = req.query;
-  db.all(`
-    SELECT c.id, p.nombre, p.precio, c.cantidad
-    FROM carrito c
-    JOIN productos p ON c.productoId = p.id
-    WHERE c.usuarioId = ?
-  `, [usuarioId], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+  db.all(
+    `SELECT c.id, c.productoId, p.nombre, p.precio, c.cantidad, p.stock
+     FROM carrito c
+     JOIN productos p ON c.productoId = p.id
+     WHERE c.usuarioId = ?`,
+    [usuarioId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(rows);
+    }
+  );
 });
 
 router.delete('/cart/:itemId', (req, res) => {
