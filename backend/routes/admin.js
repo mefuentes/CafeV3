@@ -41,10 +41,10 @@ router.get('/orders', (req, res) => {
 });
 
 router.post('/products', (req, res) => {
-  const { nombre, descripcion, precio } = req.body;
+  const { nombre, descripcion, precio, stock } = req.body;
   db.run(
-    'INSERT INTO productos (nombre, descripcion, precio) VALUES (?, ?, ?)',
-    [nombre, descripcion, precio],
+    'INSERT INTO productos (nombre, descripcion, precio, stock) VALUES (?, ?, ?, ?)',
+    [nombre, descripcion, precio, stock || 0],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ id: this.lastID });
@@ -53,10 +53,10 @@ router.post('/products', (req, res) => {
 });
 
 router.put('/products/:id', (req, res) => {
-  const { nombre, descripcion, precio } = req.body;
+  const { nombre, descripcion, precio, stock } = req.body;
   db.run(
-    'UPDATE productos SET nombre = ?, descripcion = ?, precio = ? WHERE id = ?',
-    [nombre, descripcion, precio, req.params.id],
+    'UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ? WHERE id = ?',
+    [nombre, descripcion, precio, stock, req.params.id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ updated: this.changes });
@@ -236,6 +236,122 @@ router.delete('/suppliers/:id', (req, res) => {
   db.run('DELETE FROM proveedores WHERE id = ?', [req.params.id], function (err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ deleted: this.changes });
+  });
+});
+
+// ---- Purchase orders management ----
+
+router.get('/purchase-orders', (req, res) => {
+  const q = `SELECT oc.id, oc.ordenId, oc.proveedorId, oc.productoId,
+                    oc.nombreProducto, oc.precioProducto, oc.cantidad,
+                    oc.creadoEn, p.nombre AS proveedorNombre
+             FROM ordenes_compra oc
+             LEFT JOIN proveedores p ON oc.proveedorId = p.id
+             ORDER BY oc.ordenId DESC`;
+  db.all(q, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+router.get('/purchase-orders/:ordenId', (req, res) => {
+  const q = `SELECT oc.*, p.nombre AS proveedorNombre
+             FROM ordenes_compra oc
+             LEFT JOIN proveedores p ON oc.proveedorId = p.id
+             WHERE oc.ordenId = ?`;
+  db.all(q, [req.params.ordenId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!rows.length) return res.status(404).json({ error: 'Orden no encontrada' });
+    res.json(rows);
+  });
+});
+
+router.post('/purchase-orders', (req, res) => {
+  const { proveedorId, items } = req.body;
+  if (!proveedorId || !Array.isArray(items) || !items.length)
+    return res.status(400).json({ error: 'Datos incompletos' });
+  db.get('SELECT COALESCE(MAX(ordenId), 0) as maxId FROM ordenes_compra', (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    const orderId = (row ? row.maxId : 0) + 1;
+    const stmt = db.prepare(
+      'INSERT INTO ordenes_compra (ordenId, proveedorId, productoId, nombreProducto, precioProducto, cantidad) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    let pending = items.length;
+    items.forEach(it => {
+      db.get('SELECT nombre FROM productos WHERE id = ?', [it.productoId], (er2, prod) => {
+        if (er2) {
+          pending = -1;
+          return res.status(500).json({ error: er2.message });
+        }
+        if (!prod) {
+          pending = -1;
+          return res.status(400).json({ error: 'Producto no encontrado' });
+        }
+        stmt.run(orderId, proveedorId, it.productoId, prod.nombre, it.precioProducto, it.cantidad, function(er3) {
+          if (er3) {
+            pending = -1;
+            return res.status(500).json({ error: er3.message });
+          }
+          db.run('UPDATE productos SET stock = COALESCE(stock,0) + ? WHERE id = ?', [it.cantidad, it.productoId]);
+          pending--;
+          if (pending === 0) {
+            stmt.finalize(e => {
+              if (e) return res.status(500).json({ error: e.message });
+              res.json({ orderId });
+            });
+          }
+        });
+      });
+    });
+  });
+});
+
+router.put('/purchase-orders/item/:id', (req, res) => {
+  const { productoId, cantidad, precioProducto } = req.body;
+  if (!productoId || !cantidad || !precioProducto)
+    return res.status(400).json({ error: 'Datos incompletos' });
+  db.get('SELECT * FROM ordenes_compra WHERE id = ?', [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Item no encontrado' });
+    db.get('SELECT nombre FROM productos WHERE id = ?', [productoId], (er2, prod) => {
+      if (er2) return res.status(500).json({ error: er2.message });
+      if (!prod) return res.status(400).json({ error: 'Producto no encontrado' });
+      db.run('UPDATE productos SET stock = stock - ? WHERE id = ?', [row.cantidad, row.productoId]);
+      const q = 'UPDATE ordenes_compra SET productoId = ?, nombreProducto = ?, cantidad = ?, precioProducto = ? WHERE id = ?';
+      const params = [productoId, prod.nombre, cantidad, precioProducto, req.params.id];
+      db.run(q, params, function(er3) {
+        if (er3) return res.status(500).json({ error: er3.message });
+        db.run('UPDATE productos SET stock = stock + ? WHERE id = ?', [cantidad, productoId]);
+        res.json({ updated: this.changes });
+      });
+    });
+  });
+});
+
+router.delete('/purchase-orders/item/:id', (req, res) => {
+  db.get('SELECT productoId, cantidad FROM ordenes_compra WHERE id = ?', [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Item no encontrado' });
+    db.run('UPDATE productos SET stock = stock - ? WHERE id = ?', [row.cantidad, row.productoId]);
+    db.run('DELETE FROM ordenes_compra WHERE id = ?', [req.params.id], function(er2) {
+      if (er2) return res.status(500).json({ error: er2.message });
+      res.json({ deleted: this.changes });
+    });
+  });
+});
+
+router.delete('/purchase-orders/:ordenId', (req, res) => {
+  const { ordenId } = req.params;
+  db.all('SELECT productoId, cantidad FROM ordenes_compra WHERE ordenId = ?', [ordenId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!rows.length) return res.status(404).json({ error: 'Orden no encontrada' });
+    rows.forEach(r => {
+      db.run('UPDATE productos SET stock = stock - ? WHERE id = ?', [r.cantidad, r.productoId]);
+    });
+    db.run('DELETE FROM ordenes_compra WHERE ordenId = ?', [ordenId], function(er2) {
+      if (er2) return res.status(500).json({ error: er2.message });
+      res.json({ deleted: this.changes });
+    });
   });
 });
 

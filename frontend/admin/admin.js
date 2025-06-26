@@ -17,6 +17,7 @@ function adminLogin() {
 
 let editId = null;
 let adminProducts = [];
+let adminPurchases = [];
 let userEditId = null;
 let adminUsers = [];
 let adminOrders = [];
@@ -50,6 +51,8 @@ function showModule(name) {
     name === 'invoices' ? 'block' : 'none';
   document.getElementById('suppliersModule').style.display =
     name === 'suppliers' ? 'block' : 'none';
+  document.getElementById('purchasesModule').style.display =
+    name === 'purchases' ? 'block' : 'none';
   if (name === 'products') {
     loadAdminProducts();
   } else if (name === 'users') {
@@ -60,6 +63,8 @@ function showModule(name) {
     loadAdminInvoices();
   } else if (name === 'suppliers') {
     loadAdminSuppliers();
+  } else if (name === 'purchases') {
+    loadAdminPurchases();
   }
 }
 
@@ -72,7 +77,7 @@ function loadAdminProducts() {
       const container = document.getElementById('products');
       container.innerHTML = '';
       data.forEach(p => {
-        container.innerHTML += `<div>${p.nombre} - $${p.precio} <button onclick="editProduct(${p.id})">Editar</button> <button onclick="deleteProduct(${p.id})">Eliminar</button></div>`;
+        container.innerHTML += `<div>${p.nombre} - $${p.precio} - Stock: ${p.stock || 0} <button onclick="editProduct(${p.id})">Editar</button> <button onclick="deleteProduct(${p.id})">Eliminar</button></div>`;
       });
     });
 }
@@ -91,6 +96,7 @@ function editProduct(id) {
   document.getElementById('newName').value = p.nombre;
   document.getElementById('newDesc').value = p.descripcion;
   document.getElementById('newPrice').value = p.precio;
+  document.getElementById('newStock').value = p.stock || 0;
   document.getElementById('saveBtn').textContent = 'Guardar';
   editId = id;
 }
@@ -100,6 +106,7 @@ function createProduct() {
   const nombre = document.getElementById('newName').value;
   const descripcion = document.getElementById('newDesc').value;
   const precio = parseFloat(document.getElementById('newPrice').value);
+  const stock = parseInt(document.getElementById('newStock').value) || 0;
   const url = editId ? '/admin/api/products/' + editId : '/admin/api/products';
   const method = editId ? 'PUT' : 'POST';
   fetch(url, {
@@ -108,11 +115,12 @@ function createProduct() {
       'Content-Type': 'application/json',
       'x-user-id': user.id
     },
-    body: JSON.stringify({ nombre, descripcion, precio })
+    body: JSON.stringify({ nombre, descripcion, precio, stock })
   }).then(() => {
     document.getElementById('newName').value = '';
     document.getElementById('newDesc').value = '';
     document.getElementById('newPrice').value = '';
+    document.getElementById('newStock').value = '';
     document.getElementById('saveBtn').textContent = 'Agregar';
     editId = null;
     loadAdminProducts();
@@ -372,4 +380,100 @@ function createSupplier() {
     supplierEditId = null;
     loadAdminSuppliers();
   });
+}
+
+// ---- Purchase orders management ----
+
+function loadAdminPurchases() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  fetch('/admin/api/purchase-orders', { headers: { 'x-user-id': user.id } })
+    .then(r => r.json())
+    .then(data => {
+      adminPurchases = data;
+      renderPurchases();
+    });
+}
+
+function renderPurchases() {
+  const query = (document.getElementById('searchPurchases').value || '').toLowerCase();
+  const container = document.getElementById('purchases');
+  container.innerHTML = '';
+  adminPurchases
+    .filter(p =>
+      p.nombreProducto.toLowerCase().includes(query) ||
+      String(p.ordenId).includes(query) ||
+      (p.proveedorNombre && p.proveedorNombre.toLowerCase().includes(query))
+    )
+    .forEach(p => {
+      container.innerHTML +=
+        `<div>Orden ${p.ordenId} - ${p.proveedorNombre || ''} (${p.proveedorId}) - ` +
+        `${p.nombreProducto} x${p.cantidad} - $${p.precioProducto} - ${p.creadoEn} ` +
+        `<button onclick="editPurchaseItem(${p.id})">Modificar</button> ` +
+        `<button onclick="deletePurchaseItem(${p.id})">Eliminar Producto</button> ` +
+        `<button onclick="deletePurchaseOrder(${p.ordenId})">Eliminar Orden</button></div>`;
+    });
+}
+
+function createPurchase() {
+  const user = JSON.parse(localStorage.getItem('user'));
+  Promise.all([
+    fetch('/admin/api/suppliers', { headers: { 'x-user-id': user.id } }).then(r => r.json()),
+    fetch('/api/products').then(r => r.json())
+  ]).then(([sups, prods]) => {
+    const supList = sups.map(s => `${s.id}: ${s.nombre}`).join('\n');
+    const prodList = prods.map(p => `${p.id}: ${p.nombre}`).join('\n');
+    const proveedorId = parseInt(prompt(`Proveedor (ID)\n${supList}`));
+    if (!proveedorId) return;
+    const productoId = parseInt(prompt(`Producto (ID)\n${prodList}`));
+    if (!productoId) return;
+    const cantidad = parseInt(prompt('Cantidad', '1'));
+    if (!cantidad) return;
+    const precio = parseFloat(prompt('Precio', '0'));
+    if (!precio) return;
+    fetch('/admin/api/purchase-orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+      body: JSON.stringify({ proveedorId, items: [{ productoId, cantidad, precioProducto: precio }] })
+    }).then(() => loadAdminPurchases());
+  });
+}
+
+function editPurchaseItem(id) {
+  const item = adminPurchases.find(p => p.id === id);
+  if (!item) return;
+  const user = JSON.parse(localStorage.getItem('user'));
+  fetch('/api/products')
+    .then(r => r.json())
+    .then(prods => {
+      const prodList = prods.map(p => `${p.id}: ${p.nombre}`).join('\n');
+      const prodId = parseInt(prompt(`Producto (ID)\n${prodList}`, item.productoId));
+      if (!prods.find(p => p.id === prodId)) return alert('Producto inválido');
+      const cantidad = parseInt(prompt('Cantidad', item.cantidad));
+      if (!cantidad) return;
+      const precio = parseFloat(prompt('Precio', item.precioProducto));
+      if (!precio) return;
+      fetch('/admin/api/purchase-orders/item/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+        body: JSON.stringify({ productoId: prodId, cantidad, precioProducto: precio })
+      }).then(() => loadAdminPurchases());
+    });
+}
+
+function deletePurchaseItem(id) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!confirm('¿Eliminar este producto?')) return;
+  fetch('/admin/api/purchase-orders/item/' + id, {
+    method: 'DELETE',
+    headers: { 'x-user-id': user.id }
+  }).then(() => loadAdminPurchases());
+}
+
+function deletePurchaseOrder(id) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (!confirm('¿Eliminar la orden de compra?')) return;
+  fetch('/admin/api/purchase-orders/' + id, {
+    method: 'DELETE',
+    headers: { 'x-user-id': user.id }
+  }).then(() => loadAdminPurchases());
 }
