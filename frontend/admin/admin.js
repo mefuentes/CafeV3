@@ -227,6 +227,7 @@ function renderOrders() {
         `(${o.usuarioId}) - ${o.metodoPago} - ${o.creadoEn} - ` +
         `${o.items} items - $${o.total} ` +
         `<button onclick="viewOrder(${o.ordenId})">Ver</button> ` +
+        `<button onclick="viewOrder(${o.ordenId}, true)">Editar</button> ` +
         `<button onclick="deleteOrder(${o.ordenId})">Eliminar Cobranza</button></div>`;
     });
 }
@@ -264,16 +265,24 @@ function deleteItem(id) {
   fetch('/api/cobranzas/item/' + id, { method: 'DELETE' }).then(() => loadAdminOrders());
 }
 
-function viewOrder(id) {
+function viewOrder(id, editable = false) {
   fetch('/api/cobranzas/' + id)
     .then(r => r.json())
     .then(items => {
       if (!items.length) return;
+      let total = 0;
       let html = `<h3>Cobranza ${id}</h3><ul>`;
       items.forEach(it => {
-        html += `<li>${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}</li>`;
+        total += it.cantidad * it.precioProducto;
+        html += `<li>${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}`;
+        if (editable) {
+          html += ` <button onclick="editOrder(${it.id})">Editar</button>`;
+          html += ` <button onclick="deleteItem(${it.id})">Eliminar</button>`;
+        }
+        html += `</li>`;
       });
       html += '</ul>';
+      html += `<p><strong>Monto Total: $${total.toFixed(2)}</strong></p>`;
       openModal(html);
     });
 }
@@ -443,6 +452,7 @@ function renderPurchases() {
         `<div>Orden ${o.ordenId} - ${o.proveedorNombre || ''} (${o.proveedorId}) - ` +
         `${o.items} items - $${o.total.toFixed(2)} - ${o.creadoEn} ` +
         `<button onclick="viewPurchase(${o.ordenId})">Visualizar</button> ` +
+        `<button onclick="viewPurchase(${o.ordenId}, true)">Editar</button> ` +
         `<button onclick="deletePurchaseOrder(${o.ordenId})">Eliminar Orden</button></div>`;
     });
 }
@@ -500,7 +510,7 @@ function editPurchaseItem(id) {
     });
 }
 
-function viewPurchase(id) {
+function viewPurchase(id, editable = false) {
   const user = JSON.parse(localStorage.getItem('user'));
   fetch('/admin/api/purchase-orders/' + id, { headers: { 'x-user-id': user.id } })
     .then(r => r.json())
@@ -513,7 +523,12 @@ function viewPurchase(id) {
       items.forEach(it => {
         const subtotal = it.cantidad * it.precioProducto;
         total += subtotal;
-        html += `<li>${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}</li>`;
+        html += `<li>${it.nombreProducto} x${it.cantidad} - $${it.precioProducto}`;
+        if (editable) {
+          html += ` <button onclick="editPurchaseItem(${it.id})">Editar</button>`;
+          html += ` <button onclick="deletePurchaseItem(${it.id})">Eliminar</button>`;
+        }
+        html += '</li>';
       });
       html += '</ul>';
       html += `<p><strong>Importe Total: $${total.toFixed(2)}</strong></p>`;
