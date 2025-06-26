@@ -292,7 +292,10 @@ router.post('/purchase-orders', (req, res) => {
             pending = -1;
             return res.status(500).json({ error: er3.message });
           }
-          db.run('UPDATE productos SET stock = COALESCE(stock,0) + ? WHERE id = ?', [it.cantidad, it.productoId]);
+          db.run(
+            'UPDATE productos SET stock = COALESCE(stock,0) + ?, precio = ? WHERE id = ?',
+            [it.cantidad, it.precioProducto, it.productoId]
+          );
           pending--;
           if (pending === 0) {
             stmt.finalize(e => {
@@ -321,7 +324,10 @@ router.put('/purchase-orders/item/:id', (req, res) => {
       const params = [productoId, prod.nombre, cantidad, precioProducto, req.params.id];
       db.run(q, params, function(er3) {
         if (er3) return res.status(500).json({ error: er3.message });
-        db.run('UPDATE productos SET stock = stock + ? WHERE id = ?', [cantidad, productoId]);
+        db.run(
+          'UPDATE productos SET stock = stock + ?, precio = ? WHERE id = ?',
+          [cantidad, precioProducto, productoId]
+        );
         res.json({ updated: this.changes });
       });
     });
