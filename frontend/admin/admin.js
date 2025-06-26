@@ -347,6 +347,15 @@ function createSupplier() {
   const nombre = document.getElementById('supplierName').value;
   const correo = document.getElementById('supplierEmail').value;
   const telefono = document.getElementById('supplierPhone').value;
+  if (!nombre || !correo) {
+    alert('Nombre y correo electrónico son obligatorios');
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(correo)) {
+    alert('Formato de correo electrónico inválido');
+    return;
+  }
   const url = supplierEditId
     ? '/admin/api/suppliers/' + supplierEditId
     : '/admin/api/suppliers';
