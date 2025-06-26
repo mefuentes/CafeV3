@@ -41,8 +41,17 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre TEXT,
     descripcion TEXT,
-    precio REAL
+    precio REAL,
+    stock INTEGER DEFAULT 0
   )`);
+
+  db.all('PRAGMA table_info(productos)', (err, columns) => {
+    if (err) return;
+    const names = columns.map(c => c.name);
+    if (!names.includes('stock')) {
+      db.run('ALTER TABLE productos ADD COLUMN stock INTEGER DEFAULT 0');
+    }
+  });
 
   // Insertar productos predeterminados si no existen
   const defaultProducts = [
@@ -103,6 +112,19 @@ db.serialize(() => {
     nombre TEXT,
     correo TEXT,
     telefono TEXT
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS ordenes_compra (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ordenId INTEGER,
+    proveedorId INTEGER,
+    productoId INTEGER,
+    nombreProducto TEXT,
+    precioProducto REAL,
+    cantidad INTEGER,
+    creadoEn DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(proveedorId) REFERENCES proveedores(id),
+    FOREIGN KEY(productoId) REFERENCES productos(id)
   )`);
 
   db.all('PRAGMA table_info(proveedores)', (err, columns) => {

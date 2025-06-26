@@ -13,6 +13,7 @@
         <button onclick="showModule('cobranzas')">Cobranzas</button>
         <button onclick="showModule('invoices')">Facturas</button>
         <button onclick="showModule('suppliers')">Proveedores</button>
+        <button onclick="showModule('purchases')">Órdenes de Compra</button>
         <button onclick="logout()" class="logout-btn side">Cerrar Sesión</button>
       </div>
     <div class="main-content">
@@ -25,6 +26,7 @@
           <input id="newName" placeholder="Nombre">
           <input id="newDesc" placeholder="Descripción">
           <input id="newPrice" type="number" placeholder="Precio">
+          <input id="newStock" type="number" placeholder="Stock">
           <button id="saveBtn" onclick="createProduct()">Agregar</button>
         </div>
         <div id="products"></div>
@@ -66,6 +68,13 @@
           <button id="saveSupplierBtn" onclick="createSupplier()">Agregar</button>
         </div>
         <div id="suppliers"></div>
+      </div>
+
+      <div id="purchasesModule" class="module" style="display:none;">
+        <h3>Órdenes de Compra</h3>
+        <button onclick="createPurchase()">Agregar</button>
+        <input id="searchPurchases" placeholder="Buscar..." oninput="renderPurchases()">
+        <div id="purchases"></div>
       </div>
 
     </div>
