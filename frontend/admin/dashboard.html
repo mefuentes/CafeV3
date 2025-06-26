@@ -60,8 +60,8 @@
         <h3>Proveedores</h3>
         <input id="searchSuppliers" placeholder="Buscar..." oninput="loadAdminSuppliers()">
         <div id="supplierForm">
-          <input id="supplierName" placeholder="Nombre">
-          <input id="supplierContact" placeholder="Contacto">
+          <input id="supplierName" placeholder="Nombre" required>
+          <input id="supplierEmail" type="email" placeholder="Correo Electrónico" required>
           <input id="supplierPhone" placeholder="Teléfono">
           <button id="saveSupplierBtn" onclick="createSupplier()">Agregar</button>
         </div>

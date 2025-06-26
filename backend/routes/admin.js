@@ -171,7 +171,7 @@ router.get('/suppliers', (req, res) => {
   const search = req.query.search || '';
   const like = `%${search}%`;
   const q =
-    'SELECT * FROM proveedores WHERE nombre LIKE ? OR contacto LIKE ? OR telefono LIKE ?';
+    'SELECT * FROM proveedores WHERE nombre LIKE ? OR correo LIKE ? OR telefono LIKE ?';
   db.all(q, [like, like, like], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
@@ -187,10 +187,16 @@ router.get('/suppliers/:id', (req, res) => {
 });
 
 router.post('/suppliers', (req, res) => {
-  const { nombre, contacto, telefono } = req.body;
+  const { nombre, correo, telefono } = req.body;
+  if (!nombre || !correo) {
+    return res.status(400).json({ error: 'Nombre y correo son obligatorios' });
+  }
+  if (!correo.includes('@')) {
+    return res.status(400).json({ error: 'Correo electrónico inválido' });
+  }
   db.run(
-    'INSERT INTO proveedores (nombre, contacto, telefono) VALUES (?, ?, ?)',
-    [nombre, contacto, telefono],
+    'INSERT INTO proveedores (nombre, correo, telefono) VALUES (?, ?, ?)',
+    [nombre, correo, telefono],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ id: this.lastID });
@@ -199,16 +205,19 @@ router.post('/suppliers', (req, res) => {
 });
 
 router.put('/suppliers/:id', (req, res) => {
-  const { nombre, contacto, telefono } = req.body;
+  const { nombre, correo, telefono } = req.body;
   const fields = [];
   const params = [];
   if (nombre !== undefined) {
     fields.push('nombre = ?');
     params.push(nombre);
   }
-  if (contacto !== undefined) {
-    fields.push('contacto = ?');
-    params.push(contacto);
+  if (correo !== undefined) {
+    if (!correo.includes('@')) {
+      return res.status(400).json({ error: 'Correo electrónico inválido' });
+    }
+    fields.push('correo = ?');
+    params.push(correo);
   }
   if (telefono !== undefined) {
     fields.push('telefono = ?');

@@ -317,7 +317,7 @@ function loadAdminSuppliers() {
       container.innerHTML = '';
       data.forEach(s => {
         container.innerHTML +=
-          `<div>${s.nombre} - ${s.contacto || ''} - ${s.telefono || ''} ` +
+          `<div>${s.nombre} - ${s.correo || ''} - ${s.telefono || ''} ` +
           `<button onclick="editSupplier(${s.id})">Editar</button> ` +
           `<button onclick="deleteSupplier(${s.id})">Eliminar</button></div>`;
       });
@@ -336,7 +336,7 @@ function editSupplier(id) {
   const s = adminSuppliers.find(sp => sp.id === id);
   if (!s) return;
   document.getElementById('supplierName').value = s.nombre;
-  document.getElementById('supplierContact').value = s.contacto || '';
+  document.getElementById('supplierEmail').value = s.correo || '';
   document.getElementById('supplierPhone').value = s.telefono || '';
   document.getElementById('saveSupplierBtn').textContent = 'Guardar';
   supplierEditId = id;
@@ -345,7 +345,7 @@ function editSupplier(id) {
 function createSupplier() {
   const user = JSON.parse(localStorage.getItem('user'));
   const nombre = document.getElementById('supplierName').value;
-  const contacto = document.getElementById('supplierContact').value;
+  const correo = document.getElementById('supplierEmail').value;
   const telefono = document.getElementById('supplierPhone').value;
   const url = supplierEditId
     ? '/admin/api/suppliers/' + supplierEditId
@@ -354,10 +354,10 @@ function createSupplier() {
   fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-    body: JSON.stringify({ nombre, contacto, telefono })
+    body: JSON.stringify({ nombre, correo, telefono })
   }).then(() => {
     document.getElementById('supplierName').value = '';
-    document.getElementById('supplierContact').value = '';
+    document.getElementById('supplierEmail').value = '';
     document.getElementById('supplierPhone').value = '';
     document.getElementById('saveSupplierBtn').textContent = 'Agregar';
     supplierEditId = null;
