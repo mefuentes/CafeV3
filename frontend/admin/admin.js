@@ -508,7 +508,8 @@ function deletePurchaseOrder(id) {
 }
 
 function openModal(html) {
-  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalContent').innerHTML = html +
+    '<button onclick="closeModal()">Cerrar</button>';
   document.getElementById('modal').style.display = 'flex';
 }
 
