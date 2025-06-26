@@ -42,7 +42,8 @@ db.serialize(() => {
     nombre TEXT,
     descripcion TEXT,
     precio REAL,
-    stock INTEGER DEFAULT 0
+    stock INTEGER DEFAULT 0,
+    url TEXT
   )`);
 
   db.all('PRAGMA table_info(productos)', (err, columns) => {
@@ -51,15 +52,18 @@ db.serialize(() => {
     if (!names.includes('stock')) {
       db.run('ALTER TABLE productos ADD COLUMN stock INTEGER DEFAULT 0');
     }
+    if (!names.includes('url')) {
+      db.run('ALTER TABLE productos ADD COLUMN url TEXT');
+    }
   });
 
   // Insertar productos predeterminados si no existen
   const defaultProducts = [
-    { nombre: 'Café Molido', descripcion: '250g café molido premium', precio: 3500 },
-    { nombre: 'Café en Grano', descripcion: 'Café en grano de altura', precio: 4000 },
-    { nombre: 'Café Orgánico', descripcion: 'Café sin pesticidas certificado', precio: 4500 },
-    { nombre: 'Taza de Cerámica', descripcion: 'Taza térmica de alta calidad', precio: 2500 },
-    { nombre: 'Filtro de Papel', descripcion: 'Paquete de 100 filtros para café', precio: 500 }
+    { nombre: 'Café Molido', descripcion: '250g café molido premium', precio: 3500, url: '' },
+    { nombre: 'Café en Grano', descripcion: 'Café en grano de altura', precio: 4000, url: '' },
+    { nombre: 'Café Orgánico', descripcion: 'Café sin pesticidas certificado', precio: 4500, url: '' },
+    { nombre: 'Taza de Cerámica', descripcion: 'Taza térmica de alta calidad', precio: 2500, url: '' },
+    { nombre: 'Filtro de Papel', descripcion: 'Paquete de 100 filtros para café', precio: 500, url: '' }
   ];
 
   db.all('SELECT nombre FROM productos', (err, rows) => {
@@ -68,8 +72,8 @@ db.serialize(() => {
     defaultProducts.forEach(p => {
       if (!names.includes(p.nombre)) {
         db.run(
-          'INSERT INTO productos (nombre, descripcion, precio) VALUES (?, ?, ?)',
-          [p.nombre, p.descripcion, p.precio]
+          'INSERT INTO productos (nombre, descripcion, precio, url) VALUES (?, ?, ?, ?)',
+          [p.nombre, p.descripcion, p.precio, p.url]
         );
       }
     });
