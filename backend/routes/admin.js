@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../models/db');
 
-const uploadDir = path.join(__dirname, '../frontend/uploads');
+// Almacenamos las imágenes en la carpeta pública de uploads
+const uploadDir = path.join(__dirname, '../../frontend/uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
