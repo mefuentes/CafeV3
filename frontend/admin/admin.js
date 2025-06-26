@@ -97,6 +97,7 @@ function editProduct(id) {
   document.getElementById('newName').value = p.nombre;
   document.getElementById('newDesc').value = p.descripcion;
   document.getElementById('newPrice').value = p.precio;
+  document.getElementById('newImage').value = p.url || '';
   currentStock = p.stock || 0;
   document.getElementById('saveBtn').textContent = 'Guardar';
   editId = id;
@@ -108,6 +109,7 @@ function createProduct() {
   const descripcion = document.getElementById('newDesc').value;
   const precio = parseFloat(document.getElementById('newPrice').value);
   const stock = currentStock;
+  const image = document.getElementById('newImage').value;
   const url = editId ? '/admin/api/products/' + editId : '/admin/api/products';
   const method = editId ? 'PUT' : 'POST';
   fetch(url, {
@@ -116,11 +118,12 @@ function createProduct() {
       'Content-Type': 'application/json',
       'x-user-id': user.id
     },
-    body: JSON.stringify({ nombre, descripcion, precio, stock })
+    body: JSON.stringify({ nombre, descripcion, precio, stock, url: image })
   }).then(() => {
     document.getElementById('newName').value = '';
     document.getElementById('newDesc').value = '';
     document.getElementById('newPrice').value = '';
+    document.getElementById('newImage').value = '';
     currentStock = 0;
     document.getElementById('saveBtn').textContent = 'Agregar';
     editId = null;
@@ -233,25 +236,28 @@ function renderOrders() {
 }
 
 function editOrder(id) {
-  const order = adminOrders.find(o => o.id === id);
-  if (!order) return;
-  fetch('/api/products')
+  fetch('/api/cobranzas/item/' + id)
     .then(r => r.json())
-    .then(prods => {
-      const prodList = prods.map(p => `${p.id}: ${p.nombre}`).join('\n');
-      const prodId = parseInt(prompt(`Producto (ID)\n${prodList}`, order.productoId));
-      if (!prods.find(p => p.id === prodId)) return alert('Producto inválido');
-      const cantidad = parseInt(prompt('Cantidad', order.cantidad));
-      if (!cantidad) return;
-      const precio = parseFloat(prompt('Precio', order.precioProducto));
-      if (!precio) return;
-      const metodo = prompt(`Método de pago (${paymentMethods.join(', ')})`, order.metodoPago);
-      if (!paymentMethods.includes(metodo)) return alert('Método inválido');
-      fetch('/api/cobranzas/item/' + id, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productoId: prodId, cantidad, precioProducto: precio, metodoPago: metodo })
-      }).then(() => loadAdminOrders());
+    .then(order => {
+      if (!order || order.error) return;
+      fetch('/api/products')
+        .then(r => r.json())
+        .then(prods => {
+          const prodList = prods.map(p => `${p.id}: ${p.nombre}`).join('\n');
+          const prodId = parseInt(prompt(`Producto (ID)\n${prodList}`, order.productoId));
+          if (!prods.find(p => p.id === prodId)) return alert('Producto inválido');
+          const cantidad = parseInt(prompt('Cantidad', order.cantidad));
+          if (!cantidad) return;
+          const precio = parseFloat(prompt('Precio', order.precioProducto));
+          if (!precio) return;
+          const metodo = prompt(`Método de pago (${paymentMethods.join(', ')})`, order.metodoPago);
+          if (!paymentMethods.includes(metodo)) return alert('Método inválido');
+          fetch('/api/cobranzas/item/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productoId: prodId, cantidad, precioProducto: precio, metodoPago: metodo })
+          }).then(() => loadAdminOrders());
+        });
     });
 }
 

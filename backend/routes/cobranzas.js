@@ -69,6 +69,15 @@ router.get('/cobranzas/:ordenId', (req, res) => {
   });
 });
 
+// Obtener un item de cobranza por ID
+router.get('/cobranzas/item/:id', (req, res) => {
+  db.get('SELECT * FROM cobranzas WHERE id = ?', [req.params.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(404).json({ error: 'Item no encontrado' });
+    res.json(row);
+  });
+});
+
 // Modificar un producto dentro de la cobranza
 router.put('/cobranzas/item/:id', (req, res) => {
   const { productoId, cantidad, precioProducto, metodoPago } = req.body;

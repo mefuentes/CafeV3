@@ -14,7 +14,7 @@ async function loadProducts() {
         : '<span class="out-of-stock">Sin stock</span>';
     container.innerHTML += `
       <div class="product-card">
-        <img src="assets/product-default.jpg" alt="Producto">
+        <img src="${p.url || 'assets/product-default.jpg'}" alt="Producto">
         <h3>${p.nombre}</h3>
         <p>${p.descripcion}</p>
         <strong>$${p.precio}</strong><br>
