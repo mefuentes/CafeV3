@@ -9,7 +9,7 @@
   <div class="dashboard-container">
       <div class="sidebar">
         <button onclick="showModule('products')">Productos</button>
-        <button onclick="showModule('users')">Usuarios</button>
+        <button onclick="showModule('users')">Clientes</button>
         <button onclick="showModule('cobranzas')">Cobranzas</button>
         <button onclick="showModule('invoices')">Facturas</button>
         <button onclick="showModule('suppliers')">Proveedores</button>
@@ -32,15 +32,17 @@
       </div>
 
       <div id="usersModule" class="module" style="display:none;">
-        <h3>Usuarios</h3>
+        <h3>Clientes</h3>
         <input id="searchUsers" placeholder="Buscar..." oninput="loadAdminUsers()">
         <div id="userForm">
           <input id="userName" placeholder="Nombre">
           <input id="userLast" placeholder="Apellido">
           <input id="userEmail" placeholder="Correo">
           <input id="userPass" type="password" placeholder="Contraseña">
-          <label><input type="checkbox" id="userAdmin"> Admin</label>
-          <button id="saveUserBtn" onclick="createUser()">Agregar</button>
+          <div class="admin-actions">
+            <label class="admin-check"><input type="checkbox" id="userAdmin"> Admin</label>
+            <button id="saveUserBtn" onclick="createUser()">Agregar</button>
+          </div>
         </div>
         <div id="users"></div>
       </div>

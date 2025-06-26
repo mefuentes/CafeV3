@@ -142,8 +142,24 @@ main {
   flex: 1;
   padding: 20px;
 }
-.module input {
+.module input[type="text"],
+.module input[type="number"],
+.module input[type="email"],
+.module input[type="password"] {
   width: 90%;
+}
+.module input[type="checkbox"] {
+  width: auto;
+}
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.admin-check {
+  display: flex;
+  align-items: center;
 }
 
 .modal {
