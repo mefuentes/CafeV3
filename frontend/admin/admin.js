@@ -97,7 +97,7 @@ function editProduct(id) {
   document.getElementById('newName').value = p.nombre;
   document.getElementById('newDesc').value = p.descripcion;
   document.getElementById('newPrice').value = p.precio;
-  document.getElementById('newImage').value = p.url || '';
+  document.getElementById('newImage').value = '';
   currentStock = p.stock || 0;
   document.getElementById('saveBtn').textContent = 'Guardar';
   editId = id;
@@ -109,26 +109,40 @@ function createProduct() {
   const descripcion = document.getElementById('newDesc').value;
   const precio = parseFloat(document.getElementById('newPrice').value);
   const stock = currentStock;
-  const image = document.getElementById('newImage').value;
+  const fileInput = document.getElementById('newImage');
+  const file = fileInput.files[0];
   const url = editId ? '/admin/api/products/' + editId : '/admin/api/products';
   const method = editId ? 'PUT' : 'POST';
-  fetch(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'x-user-id': user.id
-    },
-    body: JSON.stringify({ nombre, descripcion, precio, stock, url: image })
-  }).then(() => {
-    document.getElementById('newName').value = '';
-    document.getElementById('newDesc').value = '';
-    document.getElementById('newPrice').value = '';
-    document.getElementById('newImage').value = '';
-    currentStock = 0;
-    document.getElementById('saveBtn').textContent = 'Agregar';
-    editId = null;
-    loadAdminProducts();
-  });
+
+  const sendRequest = imageData => {
+    const body = { nombre, descripcion, precio, stock };
+    if (imageData) body.url = imageData;
+    fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': user.id
+      },
+      body: JSON.stringify(body)
+    }).then(() => {
+      document.getElementById('newName').value = '';
+      document.getElementById('newDesc').value = '';
+      document.getElementById('newPrice').value = '';
+      fileInput.value = '';
+      currentStock = 0;
+      document.getElementById('saveBtn').textContent = 'Agregar';
+      editId = null;
+      loadAdminProducts();
+    });
+  };
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = () => sendRequest(reader.result);
+    reader.readAsDataURL(file);
+  } else {
+    sendRequest();
+  }
 }
 
 // ---- User management ----
