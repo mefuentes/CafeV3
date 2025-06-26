@@ -100,6 +100,11 @@ async function goToPayment() {
       alert("El carrito est\u00E1 vac\u00EDo");
       return;
     }
+    const sinStock = items.find((i) => !i.stock || i.stock < i.cantidad);
+    if (sinStock) {
+      alert(`No hay stock suficiente de ${sinStock.nombre}`);
+      return;
+    }
     window.location.href = "payment.html";
   } catch (e) {
     alert("No se pudo verificar el carrito.");
