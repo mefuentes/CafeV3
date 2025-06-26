@@ -3,16 +3,22 @@ async function loadProducts() {
   const res = await fetch("/api/products");
   const products = await res.json();
 
+  window.productsData = products;
+
   const container = document.getElementById("products");
   container.innerHTML = "";
   products.forEach((p) => {
+    const action =
+      p.stock > 0
+        ? `<button onclick="addToCart(${p.id})">Agregar al carrito</button>`
+        : '<span class="out-of-stock">Sin stock</span>';
     container.innerHTML += `
       <div class="product-card">
         <img src="assets/product-default.jpg" alt="Producto">
-    <h3>${p.nombre}</h3>
+        <h3>${p.nombre}</h3>
         <p>${p.descripcion}</p>
         <strong>$${p.precio}</strong><br>
-        <button onclick="addToCart(${p.id})">Agregar al carrito</button>
+        ${action}
       </div>
     `;
   });
@@ -23,6 +29,12 @@ async function addToCart(productoId) {
   if (!user) {
     alert("Debes iniciar sesión");
     window.location.href = "login.html";
+    return;
+  }
+
+  const product = (window.productsData || []).find(p => p.id === productoId);
+  if (product && product.stock <= 0) {
+    alert("No hay en stock");
     return;
   }
 
@@ -110,7 +122,11 @@ async function confirmPurchase(method) {
       body: JSON.stringify({ usuarioId: user.id, method }),
     });
     const data = await res.json();
-    alert(`${data.message || "Compra confirmada."}\nM\u00E9todo: ${method}`);
+    if (!res.ok) {
+      alert(data.error || "No se pudo completar la compra.");
+      return;
+    }
+    alert(`${data.message || "Compra confirmada."}\nMétodo: ${method}`);
     if (data.orderId) {
       const pdfRes = await fetch(`/api/invoice/${data.orderId}`);
       if (pdfRes.ok) {
