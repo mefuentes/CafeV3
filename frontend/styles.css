@@ -142,10 +142,7 @@ main {
   flex: 1;
   padding: 20px;
 }
-.module input[type="text"],
-.module input[type="number"],
-.module input[type="email"],
-.module input[type="password"] {
+.module input {
   width: 90%;
 }
 .module input[type="checkbox"] {
