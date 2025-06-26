@@ -1,6 +1,23 @@
 const express = require('express');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const db = require('../models/db');
+
+const uploadDir = path.join(__dirname, '../frontend/uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+function storeImage(data) {
+  if (!data || typeof data !== 'string' || !data.startsWith('data:image')) return data || '';
+  const match = data.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (!match) return '';
+  const ext = match[1].split('/')[1];
+  const name = `img_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  fs.writeFileSync(path.join(uploadDir, name), match[2], 'base64');
+  return `uploads/${name}`;
+}
 const router = express.Router();
 
 function checkAdmin(req, res, next) {
@@ -44,9 +61,10 @@ router.get('/orders', (req, res) => {
 
 router.post('/products', (req, res) => {
   const { nombre, descripcion, precio, stock, url } = req.body;
+  const image = storeImage(url);
   db.run(
     'INSERT INTO productos (nombre, descripcion, precio, stock, url) VALUES (?, ?, ?, ?, ?)',
-    [nombre, descripcion, precio, stock || 0, url || ''],
+    [nombre, descripcion, precio, stock || 0, image],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ id: this.lastID });
@@ -56,14 +74,18 @@ router.post('/products', (req, res) => {
 
 router.put('/products/:id', (req, res) => {
   const { nombre, descripcion, precio, stock, url } = req.body;
-  db.run(
-    'UPDATE productos SET nombre = ?, descripcion = ?, precio = ?, stock = ?, url = ? WHERE id = ?',
-    [nombre, descripcion, precio, stock, url, req.params.id],
-    function (err) {
-      if (err) return res.status(500).json({ error: err.message });
-      res.json({ updated: this.changes });
-    }
-  );
+  const fields = ['nombre = ?', 'descripcion = ?', 'precio = ?', 'stock = ?'];
+  const params = [nombre, descripcion, precio, stock];
+  if (url !== undefined) {
+    fields.push('url = ?');
+    params.push(storeImage(url));
+  }
+  params.push(req.params.id);
+  const q = 'UPDATE productos SET ' + fields.join(', ') + ' WHERE id = ?';
+  db.run(q, params, function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ updated: this.changes });
+  });
 });
 
 router.delete('/products/:id', (req, res) => {
