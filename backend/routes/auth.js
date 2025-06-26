@@ -23,13 +23,13 @@ router.post('/register', async (req, res) => {
   try {
     const hash = hashPassword(contrasena);
     db.run(
-      'INSERT INTO usuarios (nombre, apellido, correo, contrasena) VALUES (?, ?, ?, ?)',
+      'INSERT INTO clientes (nombre, apellido, correo, contrasena) VALUES (?, ?, ?, ?)',
       [nombre, apellido, correo, hash],
       function (err) {
         if (err) {
           if (
             err.code === 'SQLITE_CONSTRAINT' &&
-            err.message.includes('usuarios.correo')
+            err.message.includes('clientes.correo')
           ) {
             return res
               .status(400)
@@ -47,7 +47,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/login', (req, res) => {
   const { correo, contrasena } = req.body;
-  db.get('SELECT * FROM usuarios WHERE correo = ?', [correo], async (err, row) => {
+  db.get('SELECT * FROM clientes WHERE correo = ?', [correo], async (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(401).json({ error: 'Credenciales inválidas' });
     const match = hashPassword(contrasena) === row.contrasena;

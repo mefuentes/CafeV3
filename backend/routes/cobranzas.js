@@ -9,11 +9,11 @@ router.post('/cobranzas', (req, res) => {
   if (!usuarioId || !Array.isArray(items) || !items.length) {
     return res.status(400).json({ error: 'Datos incompletos' });
   }
-  db.get('SELECT COALESCE(MAX(ordenId), 0) as maxId FROM ordenes', (err, row) => {
+  db.get('SELECT COALESCE(MAX(ordenId), 0) as maxId FROM cobranzas', (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     const orderId = (row ? row.maxId : 0) + 1;
     const stmt = db.prepare(
-      'INSERT INTO ordenes (ordenId, usuarioId, productoId, nombreProducto, precioProducto, cantidad, metodoPago) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO cobranzas (ordenId, usuarioId, productoId, nombreProducto, precioProducto, cantidad, metodoPago) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     let pending = items.length;
     items.forEach(it => {
@@ -49,8 +49,8 @@ router.get('/cobranzas', (req, res) => {
   const q = `SELECT o.ordenId, o.usuarioId, o.nombreProducto, o.precioProducto,
                     o.cantidad, o.metodoPago, o.creadoEn,
                     u.nombre, u.apellido
-             FROM ordenes o
-             LEFT JOIN usuarios u ON o.usuarioId = u.id
+             FROM cobranzas o
+             LEFT JOIN clientes u ON o.usuarioId = u.id
              ORDER BY o.ordenId DESC`;
   db.all(q, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -61,7 +61,7 @@ router.get('/cobranzas', (req, res) => {
 // Consulta de una cobranza por ID
 router.get('/cobranzas/:ordenId', (req, res) => {
   const { ordenId } = req.params;
-  const q = `SELECT * FROM ordenes WHERE ordenId = ?`;
+  const q = `SELECT * FROM cobranzas WHERE ordenId = ?`;
   db.all(q, [ordenId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!rows.length) return res.status(404).json({ error: 'Cobranza no encontrada' });
@@ -80,7 +80,7 @@ router.put('/cobranzas/item/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!prod) return res.status(400).json({ error: 'Producto no encontrado' });
     const q =
-      'UPDATE ordenes SET productoId = ?, nombreProducto = ?, cantidad = ?, precioProducto = ?, metodoPago = ? WHERE id = ?';
+      'UPDATE cobranzas SET productoId = ?, nombreProducto = ?, cantidad = ?, precioProducto = ?, metodoPago = ? WHERE id = ?';
     const params = [productoId, prod.nombre, cantidad, precioProducto, metodoPago, req.params.id];
     db.run(q, params, function(err2) {
       if (err2) return res.status(500).json({ error: err2.message });
@@ -93,7 +93,7 @@ router.put('/cobranzas/item/:id', (req, res) => {
 router.put('/cobranzas/:ordenId', (req, res) => {
   const { metodoPago } = req.body;
   if (!metodoPago) return res.status(400).json({ error: 'Metodo de pago requerido' });
-  db.run('UPDATE ordenes SET metodoPago = ? WHERE ordenId = ?', [metodoPago, req.params.ordenId], function(err) {
+  db.run('UPDATE cobranzas SET metodoPago = ? WHERE ordenId = ?', [metodoPago, req.params.ordenId], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ updated: this.changes });
   });
@@ -101,7 +101,7 @@ router.put('/cobranzas/:ordenId', (req, res) => {
 
 // Eliminar un producto de una cobranza
 router.delete('/cobranzas/item/:id', (req, res) => {
-  db.run('DELETE FROM ordenes WHERE id = ?', [req.params.id], function(err) {
+  db.run('DELETE FROM cobranzas WHERE id = ?', [req.params.id], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ deleted: this.changes });
   });
@@ -112,7 +112,7 @@ router.delete('/cobranzas/:ordenId', (req, res) => {
   const { ordenId } = req.params;
   db.serialize(() => {
     db.run('DELETE FROM facturas WHERE ordenId = ?', [ordenId]);
-    db.run('DELETE FROM ordenes WHERE ordenId = ?', [ordenId], function(err) {
+    db.run('DELETE FROM cobranzas WHERE ordenId = ?', [ordenId], function(err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ deleted: this.changes });
     });
