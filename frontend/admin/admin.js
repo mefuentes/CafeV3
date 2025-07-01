@@ -587,14 +587,36 @@ function closeModal() {
 // Descargar reporte en PDF para el módulo indicado
 function downloadReport(mod) {
   const user = JSON.parse(localStorage.getItem('user'));
-  fetch('/admin/api/export/' + mod, { headers: { 'x-user-id': user.id } })
+  let query = '';
+  switch (mod) {
+    case 'products':
+      query = document.getElementById('search').value || '';
+      break;
+    case 'users':
+      query = document.getElementById('searchUsers').value || '';
+      break;
+    case 'cobranzas':
+      query = document.getElementById('searchOrders').value || '';
+      break;
+    case 'facturas':
+      query = document.getElementById('searchInvoices').value || '';
+      break;
+    case 'suppliers':
+      query = document.getElementById('searchSuppliers').value || '';
+      break;
+    case 'purchase-orders':
+      query = document.getElementById('searchPurchases').value || '';
+      break;
+  }
+  const url = '/admin/api/export/' + mod + '?search=' + encodeURIComponent(query);
+  fetch(url, { headers: { 'x-user-id': user.id } })
     .then(r => r.blob())
     .then(blob => {
-      const url = window.URL.createObjectURL(blob);
+      const uri = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = uri;
       a.download = mod + '.pdf';
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(uri);
     });
 }
