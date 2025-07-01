@@ -105,7 +105,7 @@ async function goToPayment() {
       alert(`No hay stock suficiente de ${sinStock.nombre}`);
       return;
     }
-    window.location.href = "payment.html";
+    window.location.href = "pago.html";
   } catch (e) {
     alert("No se pudo verificar el carrito.");
   }

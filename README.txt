@@ -32,9 +32,9 @@ Dentro de **backend** se encuentran:
 El directorio **frontend** contiene las páginas del sitio y su lógica en JavaScript:
 
 - `landing.html` / `landing.js` – página pública inicial.
-- `login.html` y `register.html` – formulario de acceso y registro de clientes.
+- `login.html` y `registro.html` – formulario de acceso y registro de clientes.
 - `index.html` y `app.js` – catálogo de productos, carrito y confirmación de compra.
-- `payment.html` – selección de método de pago.
+- `pago.html` – selección de método de pago.
 - `admin/` – panel de administración (dashboard, script `admin.js`).
 - `styles.css` – estilos compartidos.
 

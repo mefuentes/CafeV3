@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../models/db');
 
-// Generador simple de PDF reutilizado de confirm.js
+// Generador simple de PDF reutilizado de confirmar.js
 function createPdf(lines) {
   const objs = [];
   const fontIndex =
