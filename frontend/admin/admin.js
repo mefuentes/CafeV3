@@ -84,6 +84,7 @@ function loadAdminProducts() {
 }
 
 function deleteProduct(id) {
+  if (!confirm('¿Eliminar el producto?')) return;
   const user = JSON.parse(localStorage.getItem('user'));
   fetch('/admin/api/products/' + id, {
     method: 'DELETE',
@@ -166,6 +167,7 @@ function loadAdminUsers() {
 }
 
 function deleteUser(id) {
+  if (!confirm('¿Eliminar el usuario?')) return;
   const user = JSON.parse(localStorage.getItem('user'));
   fetch('/admin/api/users/' + id, {
     method: 'DELETE',
@@ -381,6 +383,7 @@ function loadAdminSuppliers() {
 }
 
 function deleteSupplier(id) {
+  if (!confirm('¿Eliminar el proveedor?')) return;
   const user = JSON.parse(localStorage.getItem('user'));
   fetch('/admin/api/suppliers/' + id, {
     method: 'DELETE',
