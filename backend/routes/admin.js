@@ -431,6 +431,8 @@ router.delete('/purchase-orders/:ordenId', (req, res) => {
 // ---- Export reports in PDF ----
 router.get('/export/:module', (req, res) => {
   const mod = req.params.module;
+  const search = req.query.search || '';
+  const like = `%${search}%`;
   const sendPdf = (lines, fname) => {
     const pdf = createPdf(lines);
     res.setHeader('Content-Type', 'application/pdf');
@@ -439,8 +441,15 @@ router.get('/export/:module', (req, res) => {
   };
 
   switch (mod) {
-    case 'products':
-      db.all('SELECT id, nombre, precio, stock FROM productos ORDER BY id', [], (err, rows) => {
+    case 'products': {
+      const params = [];
+      let q = 'SELECT id, nombre, precio, stock FROM productos';
+      if (search) {
+        q += ' WHERE nombre LIKE ?';
+        params.push(like);
+      }
+      q += ' ORDER BY id';
+      db.all(q, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         const lines = ['Listado de Productos', 'ID | Nombre | Precio | Stock'];
         rows.forEach(p => {
@@ -449,8 +458,16 @@ router.get('/export/:module', (req, res) => {
         sendPdf(lines, 'productos');
       });
       break;
-    case 'users':
-      db.all('SELECT id, nombre, apellido, correo, isAdmin FROM clientes ORDER BY id', [], (err, rows) => {
+    }
+    case 'users': {
+      const params = [];
+      let q = 'SELECT id, nombre, apellido, correo, isAdmin FROM clientes';
+      if (search) {
+        q += ' WHERE nombre LIKE ? OR apellido LIKE ? OR correo LIKE ?';
+        params.push(like, like, like);
+      }
+      q += ' ORDER BY id';
+      db.all(q, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         const lines = ['Listado de Clientes', 'ID | Nombre | Correo | Admin'];
         rows.forEach(u => {
@@ -459,41 +476,55 @@ router.get('/export/:module', (req, res) => {
         sendPdf(lines, 'clientes');
       });
       break;
-    case 'cobranzas':
-      db.all(
-        `SELECT o.ordenId, u.nombre, u.apellido, o.metodoPago, o.creadoEn,
-                COUNT(o.id) as items, SUM(o.precioProducto * o.cantidad) as total
-         FROM cobranzas o LEFT JOIN clientes u ON o.usuarioId = u.id
-         GROUP BY o.ordenId ORDER BY o.ordenId DESC`,
-        [],
-        (err, rows) => {
-          if (err) return res.status(500).json({ error: err.message });
-          const lines = ['Listado de Cobranzas', 'Orden | Cliente | Pago | Total'];
-          rows.forEach(r => {
-            lines.push(`${r.ordenId} - ${r.nombre || ''} ${r.apellido || ''} - ${r.metodoPago} - $${r.total}`);
-          });
-          sendPdf(lines, 'cobranzas');
-        }
-      );
+    }
+    case 'cobranzas': {
+      const params = [];
+      let q = `SELECT o.ordenId, u.nombre, u.apellido, o.metodoPago, o.creadoEn,
+                       COUNT(o.id) as items, SUM(o.precioProducto * o.cantidad) as total
+                FROM cobranzas o LEFT JOIN clientes u ON o.usuarioId = u.id`;
+      if (search) {
+        q += ' WHERE CAST(o.ordenId AS TEXT) LIKE ? OR u.nombre LIKE ? OR u.apellido LIKE ?';
+        params.push(like, like, like);
+      }
+      q += ' GROUP BY o.ordenId ORDER BY o.ordenId DESC';
+      db.all(q, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const lines = ['Listado de Cobranzas', 'Orden | Cliente | Pago | Total'];
+        rows.forEach(r => {
+          lines.push(`${r.ordenId} - ${r.nombre || ''} ${r.apellido || ''} - ${r.metodoPago} - $${r.total}`);
+        });
+        sendPdf(lines, 'cobranzas');
+      });
       break;
-    case 'facturas':
-      db.all(
-        `SELECT f.id, f.ordenId, f.creadoEn, u.nombre, u.apellido
-         FROM facturas f LEFT JOIN clientes u ON f.usuarioId = u.id
-         ORDER BY f.id DESC`,
-        [],
-        (err, rows) => {
-          if (err) return res.status(500).json({ error: err.message });
-          const lines = ['Listado de Facturas', 'ID | Orden | Cliente | Fecha'];
-          rows.forEach(f => {
-            lines.push(`${f.id} - ${f.ordenId} - ${f.nombre || ''} ${f.apellido || ''} - ${f.creadoEn}`);
-          });
-          sendPdf(lines, 'facturas');
-        }
-      );
+    }
+    case 'facturas': {
+      const params = [];
+      let q = `SELECT f.id, f.ordenId, f.creadoEn, u.nombre, u.apellido
+               FROM facturas f LEFT JOIN clientes u ON f.usuarioId = u.id`;
+      if (search) {
+        q += ' WHERE CAST(f.id AS TEXT) LIKE ? OR CAST(f.ordenId AS TEXT) LIKE ? OR u.nombre LIKE ? OR u.apellido LIKE ?';
+        params.push(like, like, like, like);
+      }
+      q += ' ORDER BY f.id DESC';
+      db.all(q, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const lines = ['Listado de Facturas', 'ID | Orden | Cliente | Fecha'];
+        rows.forEach(f => {
+          lines.push(`${f.id} - ${f.ordenId} - ${f.nombre || ''} ${f.apellido || ''} - ${f.creadoEn}`);
+        });
+        sendPdf(lines, 'facturas');
+      });
       break;
-    case 'suppliers':
-      db.all('SELECT id, nombre, correo, telefono FROM proveedores ORDER BY id', [], (err, rows) => {
+    }
+    case 'suppliers': {
+      const params = [];
+      let q = 'SELECT id, nombre, correo, telefono FROM proveedores';
+      if (search) {
+        q += ' WHERE nombre LIKE ? OR correo LIKE ? OR telefono LIKE ?';
+        params.push(like, like, like);
+      }
+      q += ' ORDER BY id';
+      db.all(q, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         const lines = ['Listado de Proveedores', 'ID | Nombre | Correo | Tel'];
         rows.forEach(s => {
@@ -502,25 +533,29 @@ router.get('/export/:module', (req, res) => {
         sendPdf(lines, 'proveedores');
       });
       break;
-    case 'purchase-orders':
-      db.all(
-        `SELECT oc.ordenId, oc.creadoEn, p.nombre AS proveedorNombre,
-                SUM(oc.cantidad * oc.precioProducto) AS total,
-                COUNT(oc.id) AS items
-         FROM ordenes_compra oc
-         LEFT JOIN proveedores p ON oc.proveedorId = p.id
-         GROUP BY oc.ordenId ORDER BY oc.ordenId DESC`,
-        [],
-        (err, rows) => {
-          if (err) return res.status(500).json({ error: err.message });
-          const lines = ['Listado de Órdenes de Compra', 'Orden | Proveedor | Total'];
-          rows.forEach(o => {
-            lines.push(`${o.ordenId} - ${o.proveedorNombre || ''} - $${o.total}`);
-          });
-          sendPdf(lines, 'ordenes_compra');
-        }
-      );
+    }
+    case 'purchase-orders': {
+      const params = [];
+      let q = `SELECT oc.ordenId, oc.creadoEn, p.nombre AS proveedorNombre,
+                      SUM(oc.cantidad * oc.precioProducto) AS total,
+                      COUNT(oc.id) AS items
+               FROM ordenes_compra oc
+               LEFT JOIN proveedores p ON oc.proveedorId = p.id`;
+      if (search) {
+        q += ' WHERE CAST(oc.ordenId AS TEXT) LIKE ? OR p.nombre LIKE ?';
+        params.push(like, like);
+      }
+      q += ' GROUP BY oc.ordenId ORDER BY oc.ordenId DESC';
+      db.all(q, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const lines = ['Listado de Órdenes de Compra', 'Orden | Proveedor | Total'];
+        rows.forEach(o => {
+          lines.push(`${o.ordenId} - ${o.proveedorNombre || ''} - $${o.total}`);
+        });
+        sendPdf(lines, 'ordenes_compra');
+      });
       break;
+    }
     default:
       res.status(400).json({ error: 'Módulo no válido' });
   }
