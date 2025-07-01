@@ -13,4 +13,14 @@ async function loadLandingProducts() {
     `;
   });
 }
-window.addEventListener('DOMContentLoaded', loadLandingProducts);
+window.addEventListener('DOMContentLoaded', () => {
+  loadLandingProducts();
+  const contact = document.getElementById('contact-form');
+  if (contact) {
+    contact.addEventListener('submit', e => {
+      e.preventDefault();
+      alert('Gracias por tu mensaje. Nos pondremos en contacto pronto.');
+      contact.reset();
+    });
+  }
+});
