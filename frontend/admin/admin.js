@@ -583,3 +583,18 @@ function openModal(html) {
 function closeModal() {
   document.getElementById('modal').style.display = 'none';
 }
+
+// Descargar reporte en PDF para el módulo indicado
+function downloadReport(mod) {
+  const user = JSON.parse(localStorage.getItem('user'));
+  fetch('/admin/api/export/' + mod, { headers: { 'x-user-id': user.id } })
+    .then(r => r.blob())
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = mod + '.pdf';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    });
+}

@@ -4,6 +4,48 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../models/db');
 
+// Generador simple de PDF reutilizado de confirm.js
+function createPdf(lines) {
+  const objs = [];
+  const fontIndex =
+    objs.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>') - 1;
+  const contentLines = lines
+    .map((l, i) => `1 0 0 1 50 ${750 - i * 20} Tm (${l.replace(/[()]/g, '')}) Tj`)
+    .join('\n');
+  const streamContent = `BT\n/F1 14 Tf\n${contentLines}\nET`;
+  const contentsIndex =
+    objs.push(
+      `<< /Length ${Buffer.byteLength(streamContent)} >>\nstream\n${streamContent}\nendstream`
+    ) - 1;
+  const pageIndex =
+    objs.push(
+      `<< /Type /Page /Parent 4 0 R /MediaBox [0 0 612 792] /Contents ${
+        contentsIndex + 1
+      } 0 R /Resources << /Font << /F1 ${fontIndex + 1} 0 R >> >> >>`
+    ) - 1;
+  const pagesIndex =
+    objs.push(`<< /Type /Pages /Kids [${pageIndex + 1} 0 R] /Count 1 >>`) - 1;
+  const catalogIndex =
+    objs.push(`<< /Type /Catalog /Pages ${pagesIndex + 1} 0 R >>`) - 1;
+
+  let pdf = '%PDF-1.3\n';
+  const offsets = [0];
+  let body = '';
+  objs.forEach((o, i) => {
+    offsets.push(Buffer.byteLength(pdf + body));
+    body += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  pdf += body;
+  const xrefOffset = Buffer.byteLength(pdf);
+  let xref = `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach(off => {
+    xref += off.toString().padStart(10, '0') + ' 00000 n \n';
+  });
+  const trailer = `trailer\n<< /Size ${objs.length + 1} /Root ${catalogIndex + 1} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  pdf += xref + trailer;
+  return Buffer.from(pdf);
+}
+
 // Almacenamos las imágenes en la carpeta pública de uploads
 const uploadDir = path.join(__dirname, '../../frontend/uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -384,6 +426,104 @@ router.delete('/purchase-orders/:ordenId', (req, res) => {
       res.json({ deleted: this.changes });
     });
   });
+});
+
+// ---- Export reports in PDF ----
+router.get('/export/:module', (req, res) => {
+  const mod = req.params.module;
+  const sendPdf = (lines, fname) => {
+    const pdf = createPdf(lines);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fname}.pdf"`);
+    res.end(pdf);
+  };
+
+  switch (mod) {
+    case 'products':
+      db.all('SELECT id, nombre, precio, stock FROM productos ORDER BY id', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const lines = ['Listado de Productos', 'ID | Nombre | Precio | Stock'];
+        rows.forEach(p => {
+          lines.push(`${p.id} - ${p.nombre} - $${p.precio} - Stock: ${p.stock || 0}`);
+        });
+        sendPdf(lines, 'productos');
+      });
+      break;
+    case 'users':
+      db.all('SELECT id, nombre, apellido, correo, isAdmin FROM clientes ORDER BY id', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const lines = ['Listado de Clientes', 'ID | Nombre | Correo | Admin'];
+        rows.forEach(u => {
+          lines.push(`${u.id} - ${u.nombre} ${u.apellido} - ${u.correo} - ${u.isAdmin ? 'si' : 'no'}`);
+        });
+        sendPdf(lines, 'clientes');
+      });
+      break;
+    case 'cobranzas':
+      db.all(
+        `SELECT o.ordenId, u.nombre, u.apellido, o.metodoPago, o.creadoEn,
+                COUNT(o.id) as items, SUM(o.precioProducto * o.cantidad) as total
+         FROM cobranzas o LEFT JOIN clientes u ON o.usuarioId = u.id
+         GROUP BY o.ordenId ORDER BY o.ordenId DESC`,
+        [],
+        (err, rows) => {
+          if (err) return res.status(500).json({ error: err.message });
+          const lines = ['Listado de Cobranzas', 'Orden | Cliente | Pago | Total'];
+          rows.forEach(r => {
+            lines.push(`${r.ordenId} - ${r.nombre || ''} ${r.apellido || ''} - ${r.metodoPago} - $${r.total}`);
+          });
+          sendPdf(lines, 'cobranzas');
+        }
+      );
+      break;
+    case 'facturas':
+      db.all(
+        `SELECT f.id, f.ordenId, f.creadoEn, u.nombre, u.apellido
+         FROM facturas f LEFT JOIN clientes u ON f.usuarioId = u.id
+         ORDER BY f.id DESC`,
+        [],
+        (err, rows) => {
+          if (err) return res.status(500).json({ error: err.message });
+          const lines = ['Listado de Facturas', 'ID | Orden | Cliente | Fecha'];
+          rows.forEach(f => {
+            lines.push(`${f.id} - ${f.ordenId} - ${f.nombre || ''} ${f.apellido || ''} - ${f.creadoEn}`);
+          });
+          sendPdf(lines, 'facturas');
+        }
+      );
+      break;
+    case 'suppliers':
+      db.all('SELECT id, nombre, correo, telefono FROM proveedores ORDER BY id', [], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const lines = ['Listado de Proveedores', 'ID | Nombre | Correo | Tel'];
+        rows.forEach(s => {
+          lines.push(`${s.id} - ${s.nombre} - ${s.correo || ''} - ${s.telefono || ''}`);
+        });
+        sendPdf(lines, 'proveedores');
+      });
+      break;
+    case 'purchase-orders':
+      db.all(
+        `SELECT oc.ordenId, oc.creadoEn, p.nombre AS proveedorNombre,
+                SUM(oc.cantidad * oc.precioProducto) AS total,
+                COUNT(oc.id) AS items
+         FROM ordenes_compra oc
+         LEFT JOIN proveedores p ON oc.proveedorId = p.id
+         GROUP BY oc.ordenId ORDER BY oc.ordenId DESC`,
+        [],
+        (err, rows) => {
+          if (err) return res.status(500).json({ error: err.message });
+          const lines = ['Listado de Órdenes de Compra', 'Orden | Proveedor | Total'];
+          rows.forEach(o => {
+            lines.push(`${o.ordenId} - ${o.proveedorNombre || ''} - $${o.total}`);
+          });
+          sendPdf(lines, 'ordenes_compra');
+        }
+      );
+      break;
+    default:
+      res.status(400).json({ error: 'Módulo no válido' });
+  }
 });
 
 module.exports = router;
