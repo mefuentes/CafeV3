@@ -487,11 +487,19 @@ function createPurchase() {
     const prodList = prods.map(p => `${p.id}: ${p.nombre}`).join('\n');
     const proveedorId = parseInt(prompt(`Proveedor (ID)\n${supList}`));
     if (!proveedorId) return;
+    if (!sups.find(s => s.id === proveedorId)) {
+      alert('Proveedor inválido');
+      return;
+    }
     const items = [];
     let addMore = true;
     while (addMore) {
       const productoId = parseInt(prompt(`Producto (ID)\n${prodList}`));
       if (!productoId) break;
+      if (!prods.find(p => p.id === productoId)) {
+        alert('Producto inválido');
+        break;
+      }
       const cantidad = parseInt(prompt('Cantidad', '1'));
       if (!cantidad) break;
       const precio = parseFloat(prompt('Precio', '0'));
