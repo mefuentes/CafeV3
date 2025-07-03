@@ -90,7 +90,7 @@ db.serialize(() => {
 
   db.run(`CREATE TABLE IF NOT EXISTS cobranzas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ordenId INTEGER,
+    cobranzaId INTEGER,
     usuarioId INTEGER,
     productoId INTEGER,
     nombreProducto TEXT,
@@ -104,10 +104,10 @@ db.serialize(() => {
 
   db.run(`CREATE TABLE IF NOT EXISTS facturas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ordenId INTEGER,
+    cobranzaId INTEGER,
     usuarioId INTEGER,
     creadoEn DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(ordenId) REFERENCES cobranzas(ordenId),
+    FOREIGN KEY(cobranzaId) REFERENCES cobranzas(cobranzaId),
     FOREIGN KEY(usuarioId) REFERENCES clientes(id)
   )`);
 
@@ -144,11 +144,27 @@ db.serialize(() => {
   db.all('PRAGMA table_info(cobranzas)', (err, columns) => {
     if (err) return;
     const names = columns.map(c => c.name);
-    if (!names.includes('ordenId')) {
-      db.run('ALTER TABLE cobranzas ADD COLUMN ordenId INTEGER');
+    if (!names.includes('cobranzaId')) {
+      if (names.includes('ordenId')) {
+        db.run('ALTER TABLE cobranzas RENAME COLUMN ordenId TO cobranzaId');
+      } else {
+        db.run('ALTER TABLE cobranzas ADD COLUMN cobranzaId INTEGER');
+      }
     }
     if (!names.includes('metodoPago')) {
       db.run('ALTER TABLE cobranzas ADD COLUMN metodoPago TEXT');
+    }
+  });
+
+  db.all('PRAGMA table_info(facturas)', (err, columns) => {
+    if (err) return;
+    const names = columns.map(c => c.name);
+    if (!names.includes('cobranzaId')) {
+      if (names.includes('ordenId')) {
+        db.run('ALTER TABLE facturas RENAME COLUMN ordenId TO cobranzaId');
+      } else {
+        db.run('ALTER TABLE facturas ADD COLUMN cobranzaId INTEGER');
+      }
     }
   });
 });

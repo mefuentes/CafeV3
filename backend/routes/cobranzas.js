@@ -9,11 +9,11 @@ router.post('/cobranzas', (req, res) => {
   if (!usuarioId || !Array.isArray(items) || !items.length) {
     return res.status(400).json({ error: 'Datos incompletos' });
   }
-  db.get('SELECT COALESCE(MAX(ordenId), 0) as maxId FROM cobranzas', (err, row) => {
+  db.get('SELECT COALESCE(MAX(cobranzaId), 0) as maxId FROM cobranzas', (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     const orderId = (row ? row.maxId : 0) + 1;
     const stmt = db.prepare(
-      'INSERT INTO cobranzas (ordenId, usuarioId, productoId, nombreProducto, precioProducto, cantidad, metodoPago) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO cobranzas (cobranzaId, usuarioId, productoId, nombreProducto, precioProducto, cantidad, metodoPago) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     let pending = items.length;
     items.forEach(it => {
@@ -46,12 +46,12 @@ router.post('/cobranzas', (req, res) => {
 
 // Obtener listado de cobranzas
 router.get('/cobranzas', (req, res) => {
-  const q = `SELECT o.ordenId, o.usuarioId, o.nombreProducto, o.precioProducto,
+  const q = `SELECT o.cobranzaId AS ordenId, o.usuarioId, o.nombreProducto, o.precioProducto,
                     o.cantidad, o.metodoPago, o.creadoEn,
                     u.nombre, u.apellido
              FROM cobranzas o
              LEFT JOIN clientes u ON o.usuarioId = u.id
-             ORDER BY o.ordenId DESC`;
+             ORDER BY o.cobranzaId DESC`;
   db.all(q, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
@@ -61,7 +61,7 @@ router.get('/cobranzas', (req, res) => {
 // Consulta de una cobranza por ID
 router.get('/cobranzas/:ordenId', (req, res) => {
   const { ordenId } = req.params;
-  const q = `SELECT * FROM cobranzas WHERE ordenId = ?`;
+  const q = `SELECT * FROM cobranzas WHERE cobranzaId = ?`;
   db.all(q, [ordenId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!rows.length) return res.status(404).json({ error: 'Cobranza no encontrada' });
@@ -102,7 +102,7 @@ router.put('/cobranzas/item/:id', (req, res) => {
 router.put('/cobranzas/:ordenId', (req, res) => {
   const { metodoPago } = req.body;
   if (!metodoPago) return res.status(400).json({ error: 'Metodo de pago requerido' });
-  db.run('UPDATE cobranzas SET metodoPago = ? WHERE ordenId = ?', [metodoPago, req.params.ordenId], function(err) {
+  db.run('UPDATE cobranzas SET metodoPago = ? WHERE cobranzaId = ?', [metodoPago, req.params.ordenId], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ updated: this.changes });
   });
@@ -120,8 +120,8 @@ router.delete('/cobranzas/item/:id', (req, res) => {
 router.delete('/cobranzas/:ordenId', (req, res) => {
   const { ordenId } = req.params;
   db.serialize(() => {
-    db.run('DELETE FROM facturas WHERE ordenId = ?', [ordenId]);
-    db.run('DELETE FROM cobranzas WHERE ordenId = ?', [ordenId], function(err) {
+    db.run('DELETE FROM facturas WHERE cobranzaId = ?', [ordenId]);
+    db.run('DELETE FROM cobranzas WHERE cobranzaId = ?', [ordenId], function(err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ deleted: this.changes });
     });

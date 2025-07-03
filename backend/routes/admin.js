@@ -88,14 +88,14 @@ router.get('/users', (req, res) => {
 });
 
 router.get('/orders', (req, res) => {
-  const q = `SELECT o.ordenId, o.usuarioId, o.metodoPago, o.creadoEn,
+  const q = `SELECT o.cobranzaId AS ordenId, o.usuarioId, o.metodoPago, o.creadoEn,
                     u.nombre, u.apellido,
                     COUNT(o.id) as items,
                     SUM(o.precioProducto * o.cantidad) as total
              FROM cobranzas o
              LEFT JOIN clientes u ON o.usuarioId = u.id
-             GROUP BY o.ordenId
-             ORDER BY o.ordenId DESC`;
+             GROUP BY o.cobranzaId
+             ORDER BY o.cobranzaId DESC`;
   db.all(q, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
@@ -200,7 +200,7 @@ router.delete('/users/:id', (req, res) => {
 // ---- Invoice management ----
 
 router.get('/invoices', (req, res) => {
-  const q = `SELECT f.id, f.ordenId, f.usuarioId, f.creadoEn,
+  const q = `SELECT f.id, f.cobranzaId AS ordenId, f.usuarioId, f.creadoEn,
                     u.nombre, u.apellido
              FROM facturas f
              LEFT JOIN clientes u ON f.usuarioId = u.id
@@ -213,7 +213,7 @@ router.get('/invoices', (req, res) => {
 
 router.get('/invoices/:id', (req, res) => {
   const { id } = req.params;
-  const q = `SELECT f.id, f.ordenId, f.usuarioId, f.creadoEn,
+  const q = `SELECT f.id, f.cobranzaId AS ordenId, f.usuarioId, f.creadoEn,
                     u.nombre, u.apellido
              FROM facturas f
              LEFT JOIN clientes u ON f.usuarioId = u.id
@@ -222,7 +222,7 @@ router.get('/invoices/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!invoice) return res.status(404).json({ error: 'Factura no encontrada' });
     db.all(
-      'SELECT nombreProducto, cantidad, precioProducto FROM cobranzas WHERE ordenId = ?',
+      'SELECT nombreProducto, cantidad, precioProducto FROM cobranzas WHERE cobranzaId = ?',
       [invoice.ordenId],
       (err2, items) => {
         if (err2) return res.status(500).json({ error: err2.message });
@@ -479,14 +479,14 @@ router.get('/export/:module', (req, res) => {
     }
     case 'cobranzas': {
       const params = [];
-      let q = `SELECT o.ordenId, u.nombre, u.apellido, o.metodoPago, o.creadoEn,
+      let q = `SELECT o.cobranzaId AS ordenId, u.nombre, u.apellido, o.metodoPago, o.creadoEn,
                        COUNT(o.id) as items, SUM(o.precioProducto * o.cantidad) as total
                 FROM cobranzas o LEFT JOIN clientes u ON o.usuarioId = u.id`;
       if (search) {
-        q += ' WHERE CAST(o.ordenId AS TEXT) LIKE ? OR u.nombre LIKE ? OR u.apellido LIKE ?';
+        q += ' WHERE CAST(o.cobranzaId AS TEXT) LIKE ? OR u.nombre LIKE ? OR u.apellido LIKE ?';
         params.push(like, like, like);
       }
-      q += ' GROUP BY o.ordenId ORDER BY o.ordenId DESC';
+      q += ' GROUP BY o.cobranzaId ORDER BY o.cobranzaId DESC';
       db.all(q, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         const lines = ['Listado de Cobranzas', 'Orden | Cliente | Pago | Total'];
@@ -499,10 +499,10 @@ router.get('/export/:module', (req, res) => {
     }
     case 'facturas': {
       const params = [];
-      let q = `SELECT f.id, f.ordenId, f.creadoEn, u.nombre, u.apellido
+      let q = `SELECT f.id, f.cobranzaId AS ordenId, f.creadoEn, u.nombre, u.apellido
                FROM facturas f LEFT JOIN clientes u ON f.usuarioId = u.id`;
       if (search) {
-        q += ' WHERE CAST(f.id AS TEXT) LIKE ? OR CAST(f.ordenId AS TEXT) LIKE ? OR u.nombre LIKE ? OR u.apellido LIKE ?';
+        q += ' WHERE CAST(f.id AS TEXT) LIKE ? OR CAST(f.cobranzaId AS TEXT) LIKE ? OR u.nombre LIKE ? OR u.apellido LIKE ?';
         params.push(like, like, like, like);
       }
       q += ' ORDER BY f.id DESC';
